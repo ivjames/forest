@@ -741,7 +741,7 @@ function cmdGo(word) {
   advanceTurn();
   if (S.over) return;
 
-  if (S.player.x === S.station.x && S.player.y === S.station.y) { win('You break from the treeline and there it is: the ranger station, lit and smoking. Rescued.'); return; }
+  if (S.player.x === S.station.x && S.player.y === S.station.y) { win('You break from the treeline and there it is. The ranger station stands ahead, windows lit, smoke curling from the chimney. Rescued.'); return; }
 
   const nt = terrainAt(nx, ny);
   if (nt === 'water') good('A stream cuts across the ground here. Fresh water.');
