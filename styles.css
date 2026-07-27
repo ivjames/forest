@@ -1,15 +1,19 @@
-/* LOST IN THE FOREST — green phosphor CRT terminal
-   Plain static CSS, no build step (lab980 convention). */
+/* =============================================================================
+   LOST IN THE FOREST — green-phosphor CRT, framed as a DOS/EGA screen.
+   Plain static CSS, no build step (lab980 convention).
+   ========================================================================== */
 
 :root {
-  --bg: #050a05;
-  --phosphor: #33ff66;
+  --phosphor: #3bff74;
   --phosphor-dim: #1f9c3f;
   --phosphor-faint: #12622a;
-  --amber: #ffcf4d;    /* warnings / the bear */
-  --danger: #ff5b4d;   /* death / low health */
-  --paper: #baffcc;    /* brightest — headings, the ranger station */
-  --glow: 0 0 4px rgba(51, 255, 102, 0.55);
+  --paper: #d6ffe2;          /* brightest — headings, player, station */
+  --amber: #ffc24d;          /* warnings, the bear, fire */
+  --danger: #ff5b4d;         /* death, low stats */
+  --water: #57c9ff;
+  --berry: #e07be0;
+  --sky-night: #7fa8ff;
+  --glow: 0 0 4px rgba(59, 255, 116, 0.5);
   --mono: "Courier New", "DejaVu Sans Mono", "Liberation Mono", monospace;
 }
 
@@ -21,132 +25,190 @@ html, body {
   background: #000;
   color: var(--phosphor);
   font-family: var(--mono);
-  font-size: 16px;
-  line-height: 1.35;
   overflow: hidden;
 }
 
-/* CRT shell: subtle bulge + vignette */
-#crt {
+/* ---- the desk the monitor sits on ---------------------------------------- */
+#desk {
   position: fixed;
   inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.6vh, 18px);
+  padding: clamp(6px, 2vmin, 22px);
   background:
-    radial-gradient(ellipse at center, #0a140a 0%, #050a05 60%, #010301 100%);
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-           env(safe-area-inset-bottom) env(safe-area-inset-left);
+    radial-gradient(120% 90% at 50% 30%, #14170f 0%, #0a0b07 55%, #000 100%);
+}
+
+/* ---- monitor bezel around an EGA-proportioned (4:3) screen --------------- */
+#monitor {
+  position: relative;
+  aspect-ratio: 4 / 3;                 /* EGA 640x350 shown 4:3 on a CRT */
+  width: min(95vw, 122vh);
+  max-width: 1060px;
+  padding: 2.4%;
+  border-radius: 18px / 22px;
+  background: linear-gradient(160deg, #4a4a44 0%, #34342e 40%, #24241f 100%);
+  box-shadow:
+    0 2px 0 #5a5a52 inset,
+    0 -8px 26px rgba(0,0,0,0.6) inset,
+    0 26px 60px rgba(0,0,0,0.75),
+    0 0 0 2px #1a1a16;
+}
+
+#crt {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 10px / 13px;
+  background: radial-gradient(ellipse at center, #061206 0%, #040a04 65%, #010301 100%);
+  box-shadow:
+    0 0 30px rgba(59,255,116,0.10) inset,
+    0 0 0 3px #0c0c0a,
+    0 0 8px rgba(0,0,0,0.9) inset;
+  overflow: hidden;
+  container-type: size;                 /* text scales with the screen */
 }
 
 #scanlines {
   pointer-events: none;
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0) 0px,
-    rgba(0, 0, 0, 0) 2px,
-    rgba(0, 0, 0, 0.28) 3px
-  );
+    to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.30) 3px);
   mix-blend-mode: multiply;
-  animation: flicker 5s infinite steps(60);
+  animation: flicker 6s infinite steps(60);
 }
-@keyframes flicker {
-  0%, 96%, 100% { opacity: 1; }
-  97% { opacity: 0.82; }
-  98% { opacity: 0.95; }
+#scanlines::after {                     /* screen curvature / vignette */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 120% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.55) 100%);
+}
+@keyframes flicker { 0%,96%,100%{opacity:1} 97%{opacity:.85} 98%{opacity:.96} }
+
+#glass {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 3.2cqw 3.4cqw;
 }
 
+/* the LAB980 EGA nameplate on the bezel */
+#badge {
+  position: absolute;
+  bottom: 0.4%;
+  left: 50%;
+  transform: translateX(-50%);
+  font: bold clamp(8px, 1.5vmin, 12px)/1 var(--mono);
+  letter-spacing: 0.28em;
+  color: #8f8f84;
+  text-shadow: 0 1px 0 #000;
+}
+#badge span { color: #c9a24a; }
+
+/* ---- screen contents ----------------------------------------------------- */
 #screen {
-  position: relative;
-  z-index: 2;
   height: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: clamp(10px, 2.5vw, 28px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 2.4cqh;
+  font-size: 2.15cqw;
+  line-height: 1.32;
+  color: var(--phosphor);
   text-shadow: var(--glow);
 }
 
-/* ---- HUD: map + status panel ---- */
+/* HUD only shows while playing */
+body[data-mode="boot"] #hud,
+body[data-mode="menu"] #hud { display: none; }
+body[data-mode="boot"] #keypad,
+body[data-mode="menu"] #keypad { visibility: hidden; }
+
 #hud {
   display: flex;
-  gap: clamp(14px, 4vw, 40px);
-  flex-wrap: wrap;
+  gap: 3cqw;
   border-bottom: 1px solid var(--phosphor-faint);
-  padding-bottom: 10px;
+  padding-bottom: 1.6cqh;
+  flex: 0 0 auto;
 }
-
 #map {
   margin: 0;
-  font-size: clamp(13px, 2.4vw, 18px);
-  line-height: 1.25;
-  letter-spacing: 0.15em;
+  font-size: 2.5cqw;
+  line-height: 1.15;
+  letter-spacing: 0.12em;
   white-space: pre;
 }
-
 #panel {
-  flex: 1 1 200px;
-  min-width: 190px;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 1cqh;
+  min-width: 0;
+  font-size: 1.9cqw;
 }
-#stats, #pack {
-  margin: 0;
-  font-size: clamp(12px, 2vw, 15px);
-  white-space: pre-wrap;
-}
+#stats, #env, #pack { margin: 0; white-space: pre-wrap; }
 
-/* colour classes shared by map glyphs and log text */
+/* colour classes (map glyphs + inline log text) */
 .me       { color: var(--paper); font-weight: bold; text-shadow: 0 0 6px var(--paper); }
-.station  { color: var(--paper); font-weight: bold; text-shadow: 0 0 6px var(--paper); }
+.station  { color: var(--paper); font-weight: bold; text-shadow: 0 0 7px var(--paper); }
 .bear     { color: var(--amber); font-weight: bold; text-shadow: 0 0 6px var(--amber); }
+.fire     { color: #ff9a3c; font-weight: bold; text-shadow: 0 0 7px #ff9a3c; }
 .loot     { color: var(--amber); }
-.water    { color: #4dd2ff; text-shadow: 0 0 5px rgba(77, 210, 255, 0.6); }
+.water    { color: var(--water); text-shadow: 0 0 5px rgba(87,201,255,0.55); }
+.hill     { color: #a9ff8f; }
+.clearing { color: #e9ffa6; }
+.berry    { color: var(--berry); text-shadow: 0 0 5px rgba(224,123,224,0.5); }
+.cave     { color: #8fb39a; }
+.ravine   { color: #c67b5a; }
 .tree     { color: var(--phosphor-dim); }
 .seen     { color: var(--phosphor-faint); }
 
-.warn     { color: var(--amber); }
-.bad      { color: var(--danger); text-shadow: 0 0 6px rgba(255, 91, 77, 0.6); }
-.good     { color: var(--paper); }
-.dim      { color: var(--phosphor-dim); }
-.hint     { color: var(--phosphor-dim); font-style: italic; }
+.warn { color: var(--amber); }
+.bad  { color: var(--danger); text-shadow: 0 0 6px rgba(255,91,77,0.55); }
+.good { color: var(--paper); }
+.dim  { color: var(--phosphor-dim); }
+.night{ color: var(--sky-night); }
+.hint { color: var(--phosphor-dim); font-style: italic; }
 
-/* ---- scrolling narrative log ---- */
+/* ---- scrolling narrative log --------------------------------------------- */
 #log {
   flex: 1 1 auto;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  padding-right: 6px;
+  padding-right: 1cqw;
   scrollbar-width: thin;
   scrollbar-color: var(--phosphor-faint) transparent;
 }
 #log::-webkit-scrollbar { width: 8px; }
 #log::-webkit-scrollbar-thumb { background: var(--phosphor-faint); border-radius: 4px; }
 
-#log p { margin: 0 0 0.55em; }
-#log .echo { color: var(--phosphor-dim); }        /* the command you typed */
-#log .banner { color: var(--paper); font-weight: bold; }
-#log hr {
-  border: none;
-  border-top: 1px dashed var(--phosphor-faint);
-  margin: 0.7em 0;
+#log p {
+  margin: 0 0 0.5em;
+  animation: fadein 0.16s ease-out;
 }
+#log .echo   { color: var(--phosphor-dim); }
+#log .banner { color: var(--paper); font-weight: bold; letter-spacing: 0.06em; }
+#log hr { border: none; border-top: 1px dashed var(--phosphor-faint); margin: 0.6em 0; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 
-/* ---- input line ---- */
+/* ---- input line ---------------------------------------------------------- */
 #prompt {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 1.6cqw;
   border-top: 1px solid var(--phosphor-faint);
-  padding-top: 10px;
+  padding-top: 1.4cqh;
+  flex: 0 0 auto;
 }
 .caret { color: var(--paper); }
 #cmd {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -157,12 +219,40 @@ html, body {
 }
 #cmd::placeholder { color: var(--phosphor-faint); }
 
-@media (max-width: 560px) {
-  #hud { gap: 12px; }
-  #map { letter-spacing: 0.12em; }
-  #panel { flex-basis: 100%; }
+/* ---- on-screen keypad ---------------------------------------------------- */
+#keypad {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(4px, 0.9vmin, 8px);
+  width: min(95vw, 122vh);
+  max-width: 1060px;
+}
+#keypad button {
+  flex: 0 0 auto;
+  min-width: clamp(34px, 6vmin, 52px);
+  padding: clamp(5px, 1.1vmin, 9px) clamp(8px, 1.6vmin, 14px);
+  background: #0a140a;
+  color: var(--phosphor);
+  border: 1px solid var(--phosphor-faint);
+  border-radius: 5px;
+  font: bold clamp(10px, 1.7vmin, 14px)/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-shadow: var(--glow);
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+#keypad button.wide { letter-spacing: 0.14em; }
+#keypad button:hover { background: #10240f; border-color: var(--phosphor-dim); }
+#keypad button:active { background: var(--phosphor-dim); color: #041004; }
+
+/* short / wide viewports: give the screen more room, shrink chrome */
+@media (max-height: 620px) {
+  #monitor { width: min(96vw, 150vh); }
+  #keypad button { padding: 4px 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   #scanlines { animation: none; }
+  #log p { animation: none; }
 }
