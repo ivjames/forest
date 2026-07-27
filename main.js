@@ -1039,7 +1039,7 @@ function handleMenu(input) {
 }
 
 function handle(raw) {
-  if (MODE === 'boot') return;                   // ignore input during the boot sequence
+  if (MODE === 'boot' || MODE === 'idle') return;  // ignore input during power-on/boot
 
   const input = raw.trim().toLowerCase();
   if (!input && MODE !== 'play') return;
@@ -1161,6 +1161,34 @@ function typeLines(lines, delay, done) {
   })();
 }
 
+// "Power on" gate: browsers keep Web Audio suspended until a user gesture, so
+// the boot beep would be silent on page load. Wait for the first key/tap, unlock
+// audio inside that gesture, then run an audible boot.
+function idle() {
+  MODE = 'idle'; bodyMode('idle');
+  $log().innerHTML = '';
+  print('LAB980 EGA SYSTEMS', 'dim');
+  print('&nbsp;', 'dim');
+  print('►  PRESS ANY KEY TO POWER ON  ◄', 'banner blink');
+  print('<span class="dim">(or tap the screen)</span>');
+
+  const go = (e) => {
+    if (e.type === 'keydown' && ['Shift','Control','Alt','Meta','Tab'].includes(e.key)) return;
+    e.preventDefault();
+    document.removeEventListener('keydown', go, true);
+    document.removeEventListener('pointerdown', go, true);
+    ignite();
+  };
+  document.addEventListener('keydown', go, true);
+  document.addEventListener('pointerdown', go, true);
+}
+
+function ignite() {
+  // Unlock the AudioContext synchronously inside the gesture, then beep + boot.
+  if (soundOn) { try { audio(); } catch (_) {} sfx('boot'); }
+  boot();
+}
+
 function boot() {
   MODE = 'boot'; bodyMode('boot');
   $log().innerHTML = '';
@@ -1276,5 +1304,5 @@ window.addEventListener('DOMContentLoaded', () => {
   // Keep focus on the prompt when tapping the screen (but allow text selection).
   $('screen').addEventListener('click', () => { if (!window.getSelection().toString()) input.focus(); });
 
-  boot();
+  idle();
 });
