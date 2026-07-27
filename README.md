@@ -97,7 +97,7 @@ which is the inherent cost of the real hardware colours.
 All text and map-glyph colours meet **WCAG 2.1 AA** contrast (≥4.5:1) against the
 screen background — most clear AAA (≥7:1); only the decorative dividers sit lower
 (3.55:1, above the 3:1 UI floor). Information is never carried by colour alone —
-every map feature has a distinct glyph (`~ ^ " % n V R B @`), and reduced-motion
+every map feature has a distinct glyph (`≈ ^ _ % n V R B @`), and reduced-motion
 preferences disable the scanline flicker and text fade.
 
 ## Files

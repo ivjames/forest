@@ -54,9 +54,9 @@ const ITEMS = {
 /* ---- terrain -------------------------------------------------------------- */
 const TERRAIN = {
   forest:   { glyph: '*', cls: 'tree'    },
-  water:    { glyph: '~', cls: 'water'   },
+  water:    { glyph: '≈', cls: 'water'   },
   hill:     { glyph: '^', cls: 'hill'    },
-  clearing: { glyph: '"', cls: 'clearing'},
+  clearing: { glyph: '_', cls: 'clearing'},
   berry:    { glyph: '%', cls: 'berry'   },
   cave:     { glyph: 'n', cls: 'cave'    },
   ravine:   { glyph: 'V', cls: 'ravine'  },
@@ -964,7 +964,7 @@ function cmdLegend() {
   rule(); print('MAP LEGEND', 'banner');
   say(
     '<span class="me">@</span> you   <span class="station">R</span> ranger station   <span class="bear">B</span> bear   <span class="fire">ф</span> fire\n' +
-    '<span class="tree">*</span> forest   <span class="water">~</span> water   <span class="hill">^</span> hill   <span class="clearing">"</span> clearing\n' +
+    '<span class="tree">*</span> forest   <span class="water">≈</span> water   <span class="hill">^</span> hill   <span class="clearing">_</span> clearing\n' +
     '<span class="berry">%</span> berries   <span class="cave">n</span> cave (shelter)   <span class="ravine">V</span> ravine (needs rope)\n' +
     '<span class="loot">r c b f …</span> dropped gear'
   );
