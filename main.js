@@ -1,16 +1,16 @@
 /* =============================================================================
-   LOST IN THE FOREST  —  v2
+   LOST IN THE FOREST  (v2)
    A DOS/EGA-era survival text adventure, reborn in the browser.
 
    You wake lost in a 10x10 stretch of wilderness. Somewhere out there is a
-   ranger station — reach it and you're rescued. Somewhere out there is also a
+   ranger station. Reach it and you're rescued. Somewhere out there is also a
    bear. Thirst, hunger, and the cold of night are all ticking down.
 
    Systems: procedural terrain (streams, hills, clearings, berry patches, a
    cave, ravines), a day/night cycle with weather and hypothermia, a bear with
    wander/hunt/flee AI, foraging & fishing, random trail events, a dozen
    findable items, three difficulties, scoring with saved high scores, and
-   save/resume. No framework, no build step — one state machine, one parser.
+   save/resume. No framework, no build step. One state machine, one parser.
    ========================================================================== */
 
 'use strict';
@@ -164,14 +164,14 @@ function generate(diffName) {
   scatter('ravine', 5);
   const cave = freeCell(['water']); setT(cave.x, cave.y, 'cave');
 
-  // Player, station, bear den — none on ravine/water for a fair start.
+  // Player, station, bear den: none on ravine/water for a fair start.
   const player = freeCell(['ravine']);
   let station;
   do { station = freeCell(['ravine', 'water']); } while (cheby(station, player) < 3);
   let den;
   do { den = freeCell(); } while (cheby(den, player) < 4 || (den.x === station.x && den.y === station.y));
 
-  // Loot — every core item, then extras, on their own non-ravine cells.
+  // Loot: every core item, then extras, on their own non-ravine cells.
   const loot = new Map();
   const bag = ['rations', 'rations', 'canteen', 'binocs', 'firetools', 'map',
                'firstaid', 'knife', 'rope', 'compass', 'whistle', 'flare',
@@ -308,7 +308,7 @@ function renderPack() {
 function renderAll() { renderMap(); renderStats(); renderPack(); }
 
 /* ---------------------------------------------------------------------------
-   Sound — IBM PC speaker emulation (1-bit square-wave beeper)
+   Sound: IBM PC speaker emulation (1-bit square-wave beeper)
 
    The PC speaker was a single square-wave driven by the 8253 timer: no volume,
    no timbre, just a pitch switched on and off. We reproduce that voice with
@@ -358,7 +358,7 @@ function glide(f0, f1, dur, vol = 0.08) {
   o.connect(g); g.connect(MASTER);
   o.start(t); o.stop(t + dur + 0.02);
 }
-// rapid random-pitch burst — the classic PC-speaker "noise" trick
+// rapid random-pitch burst: the classic PC-speaker "noise" trick
 function burst(count, lo, hi, step, vol = 0.05) {
   audio(); let t = AC.currentTime + 0.001;
   for (let i = 0; i < count; i++) { tone(lo + Math.random() * (hi - lo), t, step, vol); t += step; }
@@ -415,7 +415,7 @@ function advanceTurn() {
 
   // Day/night boundary flavor.
   const p = S.turn % CYCLE;
-  if (p === DAY_LEN) { sfx('night'); warn('The light drains from the trees. Night falls — and the cold with it.'); }
+  if (p === DAY_LEN) { sfx('night'); warn('The light drains from the trees. Night falls, and the cold with it.'); }
   else if (p === 0 && S.turn > 0) { sfx('dawn'); good('Grey dawn seeps through the canopy. You made it through the night.'); }
 
   for (let t = 0; t < ticks; t++) metabolize();
@@ -430,7 +430,7 @@ function announceWeather() {
     clear: 'The sky clears; the air sharpens.',
     fog:   'A cold fog rolls in. You can barely see past your own hands.',
     rain:  'Rain starts to fall, steady and cold.',
-    storm: 'The sky blackens. Thunder rolls — a storm is breaking.',
+    storm: 'The sky blackens. Thunder rolls. A storm is breaking.',
   }[S.weather];
   hint(msg);
 }
@@ -470,8 +470,8 @@ function metabolize() {
     };
     bad(`${dying.map((d) => m[d]).join(' ')} (-1 health)`);
   } else {
-    if (st.thirst === 2) warn('Your mouth is dry — find water soon.');
-    if (st.hunger === 2) warn('Your stomach growls — you should eat soon.');
+    if (st.thirst === 2) warn('Your mouth is dry. Find water soon.');
+    if (st.hunger === 2) warn('Your stomach growls. You should eat soon.');
     if (st.warmth === 2 && (isNight() || S.weather === 'storm')) warn('You\'re shivering. Get to shelter or make a fire.');
   }
 }
@@ -514,7 +514,7 @@ function moveBear() {
   if (B.x === P.x && B.y === P.y) { bearEncounter(); return; }
   if (S.bearState === 'hunt' && now <= 2) { S.bearGlyphUntil = S.turn; renderMap(); }
   if (hasLight() || now === 1) {
-    if (now === 1) warn('A branch cracks close by — a low, wet growl. The bear is right on you.');
+    if (now === 1) warn('A branch cracks close by, a low, wet growl. The bear is right on you.');
     else if (now === 2) hint('Fresh bear tracks, and the reek of it hangs in the air.');
   }
 }
@@ -535,7 +535,7 @@ function bearEncounter() {
   sfx('bear');
 
   if (S.fireCell === key(P.x, P.y) && S.turn <= S.fireUntil) {
-    warn('The bear lunges — then recoils from your fire, huffing, and crashes back into the trees.');
+    warn('The bear lunges, then recoils from your fire, huffing, and crashes back into the trees.');
     S.bearFleeUntil = S.turn + 4; scatterBear(3); return;
   }
   if (terrainAt(P.x, P.y) === 'cave') {
@@ -548,7 +548,7 @@ function bearEncounter() {
     say('You spark your flint into a fistful of dry needles and thrust the flame at it. The bear balks and flees.');
     S.bearFleeUntil = S.turn + 4; scatterBear(3);
   } else if (S.inventory.knife > 0 && chance(0.6)) {
-    say('You slash out with the hunting knife. The bear yelps and retreats — but not before it rakes you.');
+    say('You slash out with the hunting knife. The bear yelps and retreats, but not before it rakes you.');
     S.stats.health = Math.max(0, S.stats.health - 1); bad('(-1 health)');
     S.bearFleeUntil = S.turn + 3; scatterBear(4);
   } else {
@@ -578,7 +578,7 @@ function dropRandomItem() {
   S.inventory[id]--; if (S.inventory[id] <= 0) delete S.inventory[id];
   const here = key(S.player.x, S.player.y);
   if (!S.loot.has(here)) S.loot.set(here, id);
-  warn(`You drop your ${ITEMS[id].name} in the chaos — it lands nearby.`);
+  warn(`You drop your ${ITEMS[id].name} in the chaos. It lands nearby.`);
 }
 
 function checkDeath() {
@@ -599,12 +599,12 @@ function maybeEvent() {
       if (missing.length && !S.loot.has(key(S.player.x, S.player.y))) {
         const id = pick(missing);
         S.loot.set(key(S.player.x, S.player.y), id);
-        good(`You trip over a half-rotted backpack. Something\'s still inside — a ${ITEMS[id].name}. Try "take".`);
+        good(`You trip over a half-rotted backpack. Something\'s still inside: a ${ITEMS[id].name}. Try "take".`);
       } else { hint('An old campsite, long cold. Nothing left worth taking.'); }
       break;
     }
     case 'snake':
-      if (S.inventory.knife > 0) say('A snake strikes from the brush — you knock it away with your knife. Close one.');
+      if (S.inventory.knife > 0) say('A snake strikes from the brush, and you knock it away with your knife. Close one.');
       else { S.stats.health = Math.max(0, S.stats.health - 1); bad('A snake strikes your ankle before you can react! (-1 health)'); checkDeath(); }
       break;
     case 'ankle':
@@ -675,8 +675,8 @@ const lose = (reason) => endGame(false, reason);
 function cmdLook() {
   const P = S.player, t = terrainAt(P.x, P.y);
   if (isNight() && !hasLight()) {
-    say('The dark is absolute. You can barely see your own hands — you need a light, or wait for dawn.');
-    if (t === 'water') good('You can hear — and feel — water at your feet. You could <b>drink</b>.');
+    say('The dark is absolute. You can barely see your own hands. You need a light, or wait for dawn.');
+    if (t === 'water') good('You can hear, and feel, water at your feet. You could <b>drink</b>.');
     return;
   }
 
@@ -685,18 +685,18 @@ function cmdLook() {
                'Ferns and deadfall crowd the forest floor. A woodpecker knocks, far off.',
                'The canopy closes overhead; moss softens every trunk and stone.'],
     water:    ['A clear stream runs right past your feet, cold and quick.'],
-    hill:     ['You stand on a rocky rise. The trees fall away below — a good place to look out.'],
+    hill:     ['You stand on a rocky rise. The trees fall away below. A good place to look out.'],
     clearing: ['A grassy clearing opens to the sky. Anything you burn here would be seen for miles.'],
     berry:    ['Thickets of berry bushes crowd in, heavy with fruit. You could <b>forage</b>.'],
-    cave:     ['A low cave mouth breaks the hillside — dry, dark, out of the wind. Good shelter.'],
+    cave:     ['A low cave mouth breaks the hillside: dry, dark, out of the wind. Good shelter.'],
     ravine:   ['You stand at the lip of a deep ravine.'],
   }[t];
   say(isNight() ? 'By your light, ' + pick(desc).charAt(0).toLowerCase() + pick(desc).slice(1) : pick(desc));
 
-  if (P.x === S.station.x && P.y === S.station.y) { win('You stumble onto the ranger station itself — you\'re safe.'); return; }
+  if (P.x === S.station.x && P.y === S.station.y) { win('You stumble onto the ranger station itself. You\'re safe.'); return; }
 
-  if (t === 'water') good('Fresh water here — you could <b>drink</b> or <b>fill canteen</b>.');
-  if (t === 'berry') good('Ripe berries within reach — <b>forage</b> to eat.');
+  if (t === 'water') good('Fresh water here. You could <b>drink</b> or <b>fill canteen</b>.');
+  if (t === 'berry') good('Ripe berries within reach, ready to <b>forage</b>.');
   if (t === 'cave') hint('You\'re sheltered here: no cold at night, and the bear won\'t follow you in.');
 
   // adjacent water
@@ -708,7 +708,7 @@ function cmdLook() {
 
   // station proximity
   const sd = cheby(P, S.station);
-  if (sd === 1) { good(`Through a gap in the trees — a building. The ranger station, just ${bearing(P, S.station)}!`); S.stationKnown = true; }
+  if (sd === 1) { good(`Through a gap in the trees, a building. The ranger station, just ${bearing(P, S.station)}!`); S.stationKnown = true; }
   else if (sd <= (S.weather === 'fog' ? 1 : 3)) hint('A faint tang of woodsmoke rides the breeze.');
 
   // bear proximity
@@ -725,7 +725,7 @@ function cmdGo(word) {
   if (!dir) { warn('Go where? Try north, south, east, or west.'); return; }
   const d = DIRS[dir];
   const nx = S.player.x + d.dx, ny = S.player.y + d.dy;
-  if (!inBounds(nx, ny)) { sfx('bump'); say(`You push ${dir}, but the forest only thickens — that\'s the edge of the woods.`); return; }
+  if (!inBounds(nx, ny)) { sfx('bump'); say(`You push ${dir}, but the forest only thickens. That\'s the edge of the woods.`); return; }
 
   if (terrainAt(nx, ny) === 'ravine') {
     if (S.inventory.rope > 0) { say(`You rig your rope and climb down and across the ravine, heading <b>${dir}</b>.`); }
@@ -741,12 +741,12 @@ function cmdGo(word) {
   advanceTurn();
   if (S.over) return;
 
-  if (S.player.x === S.station.x && S.player.y === S.station.y) { win('You break from the treeline and there it is — the ranger station, lit and smoking. Rescued.'); return; }
+  if (S.player.x === S.station.x && S.player.y === S.station.y) { win('You break from the treeline and there it is: the ranger station, lit and smoking. Rescued.'); return; }
 
   const nt = terrainAt(nx, ny);
-  if (nt === 'water') good('A stream cuts across the ground here — fresh water.');
-  else if (nt === 'berry') good('You wade into berry thickets — <b>forage</b> for food.');
-  else if (nt === 'cave') hint('You duck into a cave mouth — shelter from cold and bear.');
+  if (nt === 'water') good('A stream cuts across the ground here. Fresh water.');
+  else if (nt === 'berry') good('You wade into berry thickets, ripe to <b>forage</b>.');
+  else if (nt === 'cave') hint('You duck into a cave mouth. Shelter from cold and bear.');
   if (S.loot.has(key(nx, ny))) good(`Something is half-buried here: ${ITEMS[S.loot.get(key(nx, ny))].name}.`);
 
   if (fresh) maybeEvent();
@@ -757,15 +757,15 @@ function cmdTake(rest) {
   if (!S.loot.has(k)) { say('There is nothing here to pick up.'); return; }
   const id = S.loot.get(k);
   if (rest && !ITEMS[id].aliases.some((a) => rest.includes(a) || a.includes(rest))) {
-    say(`You don't see any "${rest}" here — but there is a ${ITEMS[id].name}.`); return;
+    say(`You don't see any "${rest}" here, but there is a ${ITEMS[id].name}.`); return;
   }
   S.loot.delete(k);
   S.inventory[id] = (S.inventory[id] || 0) + 1;
   good(`You take the ${ITEMS[id].name}.`);
   sfx('take');
-  if (id === 'map') { S.stationKnown = true; for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the whole valley — the station is marked.'); }
+  if (id === 'map') { S.stationKnown = true; for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the whole valley. The station is marked.'); }
   if (id === 'canteen' && S.canteenWater === 0) hint('Stand on water and <b>fill canteen</b> to carry drinks.');
-  if (id === 'firetools') hint('You can <b>make fire</b> now — warmth, a bear-ward, a signal.');
+  if (id === 'firetools') hint('You can <b>make fire</b> now: warmth, a bear-ward, a signal.');
   if (id === 'binocs') hint('Try <b>use binoculars</b> to scan the distance.');
   if (id === 'compass') hint('Your HUD now shows the bearing to the station at all times.');
 }
@@ -776,7 +776,7 @@ function cmdInventory() {
   say('You are carrying:');
   for (const id of ids) {
     let line = `  • ${ITEMS[id].name}${S.inventory[id] > 1 ? ` (x${S.inventory[id]})` : ''}`;
-    if (id === 'canteen') line += ` — ${S.canteenWater}/3 drinks`;
+    if (id === 'canteen') line += ` (${S.canteenWater}/3 drinks)`;
     say(line);
   }
 }
@@ -811,7 +811,7 @@ function cmdDrink() {
 }
 
 function cmdFill() {
-  if (!(S.inventory.canteen > 0)) { say('You have nothing to fill — you need a canteen.'); return; }
+  if (!(S.inventory.canteen > 0)) { say('You have nothing to fill. You need a canteen.'); return; }
   if (terrainAt(S.player.x, S.player.y) !== 'water') { say('No water here. Stand on a stream first.'); return; }
   S.canteenWater = 3; good('You fill the canteen to the brim. (3/3)');
 }
@@ -829,7 +829,7 @@ function cmdForage() {
   if (terrainAt(S.player.x, S.player.y) !== 'berry') { say('Nothing to forage here. Look for berry thickets (%).'); return; }
   if (chance(0.15)) {
     S.stats.health = Math.max(0, S.stats.health - 1);
-    bad('You eat a handful too fast — some were bitter and wrong. Your stomach twists. (-1 health)');
+    bad('You eat a handful too fast, and some were bitter and wrong. Your stomach twists. (-1 health)');
   } else {
     S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 4);
     sfx('eat');
@@ -843,7 +843,7 @@ function cmdFish() {
   if (!(S.inventory.fishline > 0)) { say('You have no fishing line.'); return; }
   say('You cast your line into the current and wait, still as the trees.');
   advanceTurn(); if (S.over) return;
-  if (chance(0.6)) { S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 6); sfx('eat'); good('A tug — you land a fat trout and eat well.'); }
+  if (chance(0.6)) { S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 6); sfx('eat'); good('A tug! You land a fat trout and eat well.'); }
   else say('Nothing bites. The line comes up empty.');
 }
 
@@ -860,7 +860,7 @@ function cmdClimb() {
   S.stationKnown = true;
   const sd = cheby(P, S.station);
   const dist = sd <= 2 ? 'close now' : sd <= 5 ? 'some way off' : 'far to go';
-  if (S.weather === 'fog') hint('The fog swallows the distance — you can only just make out the station\'s direction.');
+  if (S.weather === 'fog') hint('The fog swallows the distance. You can only just make out the station\'s direction.');
   good(`You spot the glint of the ranger station roof: <b>${bearing(P, S.station)}</b>, ${dist}.`);
 
   // From a hill you also reveal the surrounding terrain on the map.
@@ -874,7 +874,7 @@ function cmdClimb() {
   }
 
   const bd = cheby(P, S.bear);
-  if (bd <= (high ? 6 : 4)) { warn(`You catch the bear moving — ${bearing(P, S.bear)} of you.`); S.bearGlyphUntil = S.turn + 1; }
+  if (bd <= (high ? 6 : 4)) { warn(`You catch the bear moving, ${bearing(P, S.bear)} of you.`); S.bearGlyphUntil = S.turn + 1; }
   else hint('No sign of the bear from here.');
 
   if (!high && S.inventory.rope <= 0 && chance(0.12)) {
@@ -900,7 +900,7 @@ function cmdBinocs() {
     const [lx, ly] = k.split(',').map(Number);
     if (cheby({ x: lx, y: ly }, P) <= 2 && !S.mapped.has(k)) { S.mapped.add(k); found++; }
   }
-  if (found) good(`You glass ${found} glint${found > 1 ? 's' : ''} of something useful nearby — now marked on your map.`);
+  if (found) good(`You glass ${found} glint${found > 1 ? 's' : ''} of something useful nearby, now marked on your map.`);
 }
 
 function cmdFire() {
@@ -913,19 +913,19 @@ function cmdFire() {
   sfx('fire');
   const sd = cheby(S.player, S.station);
   const seen = sd <= 2 || (t === 'clearing' && sd <= 4);
-  if (seen) good('A shout answers from the trees — someone at the station has seen your smoke!');
+  if (seen) good('A shout answers from the trees. Someone at the station has seen your smoke!');
   advanceTurn();
-  if (!S.over && seen) win('Boots crash toward you through the brush — a ranger, following your smoke. You\'re saved.');
+  if (!S.over && seen) win('Boots crash toward you through the brush. A ranger, following your smoke. You\'re saved.');
 }
 
 function cmdWhistle() {
   if (!(S.inventory.whistle > 0)) { say('You have no whistle.'); return; }
-  say('You put the tin whistle to your lips and blow — a shrill blast splits the quiet.');
+  say('You put the tin whistle to your lips and blow. A shrill blast splits the quiet.');
   sfx('whistle');
   if (cheby(S.player, S.bear) <= 5) { warn('You hear the bear crash away in alarm.'); S.bearFleeUntil = S.turn + 5; S.bearState = 'flee'; }
   else hint('Only the echo answers.');
   const sd = cheby(S.player, S.station);
-  if (sd <= 1) { advanceTurn(); if (!S.over) win('An answering shout — a ranger has heard you, and comes running.'); return; }
+  if (sd <= 1) { advanceTurn(); if (!S.over) win('An answering shout. A ranger has heard you, and comes running.'); return; }
   advanceTurn();
 }
 
@@ -936,16 +936,16 @@ function cmdFlare() {
   sfx('flare');
   for (let x = 0; x < SIZE; x++) for (let y = 0; y < SIZE; y++) S.mapped.add(key(x, y));
   S.stationKnown = true; S.bearGlyphUntil = S.turn + 1;
-  good('For one blazing moment the whole valley is lit — the map is yours.');
+  good('For one blazing moment the whole valley is lit, and the map is yours.');
   const sd = cheby(S.player, S.station);
   advanceTurn(); if (S.over) return;
-  if (sd <= 4) win('The flare bursts close enough — the station sees it, and rescue is on its way.');
+  if (sd <= 4) win('The flare bursts close enough. The station sees it, and rescue is on its way.');
   else hint('But you\'re too far out; no one at the station could have seen it clearly. At least you know the way now.');
 }
 
 function cmdHeal() {
   if (!(S.inventory.firstaid > 0)) { say('You have no first-aid kit.'); return; }
-  if (S.stats.health >= S.stats.healthMax) { say('You\'re not hurt enough to need it — save the kit.'); return; }
+  if (S.stats.health >= S.stats.healthMax) { say('You\'re not hurt enough to need it. Save the kit.'); return; }
   S.inventory.firstaid--; if (S.inventory.firstaid <= 0) delete S.inventory.firstaid;
   S.stats.health = Math.min(S.stats.healthMax, S.stats.health + 3);
   good('You clean and bind your wounds. That\'s better. (+3 health)');
@@ -957,7 +957,7 @@ function cmdRest() {
   else if (fireOn() && S.fireCell === key(S.player.x, S.player.y)) say('You sit close to the fire and let its warmth soak in.');
   else say('You sit against a trunk and catch your breath, ears straining at the dark.');
   advanceTurn();
-  if (!S.over) hint('Time passes — and so do the bear, the weather, and the hours.');
+  if (!S.over) hint('Time passes, and so do the bear, the weather, and the hours.');
 }
 
 function cmdLegend() {
@@ -982,7 +982,7 @@ function cmdHelp() {
     '<b>use binoculars</b> · <b>blow whistle</b> · <b>use flare</b> · <b>bandage</b>\n' +
     '<b>rest</b> · <b>legend</b> · <b>sound</b> · <b>palette</b> · <b>screen</b> · <b>restart</b> · <b>menu</b>'
   );
-  hint('Goal: reach the RANGER STATION (R) — or signal it with a fire/flare. Mind thirst, hunger, cold, and the bear.');
+  hint('Goal: reach the RANGER STATION (R), or signal it with a fire/flare. Mind thirst, hunger, cold, and the bear.');
 }
 
 /* ---------------------------------------------------------------------------
@@ -1133,16 +1133,16 @@ function toggleAspect() {
   try { localStorage.setItem(ASPECT_KEY, aspect); } catch (_) {}
   applyAspect();
   sfx('menu');
-  if (aspect === 'portrait') good('Screen: PORTRAIT — a tall 9:16 display, better for phones.');
-  else good('Screen: CLASSIC — the 4:3 EGA display (default).');
+  if (aspect === 'portrait') good('Screen: PORTRAIT. A tall 9:16 display, better for phones.');
+  else good('Screen: CLASSIC. The 4:3 EGA display (default).');
 }
 const isPortraitViewport = () => window.matchMedia && window.matchMedia('(max-width: 760px) and (orientation: portrait)').matches;
 function toggleTheme() {
   theme = theme === 'ega' ? 'phosphor' : 'ega';
   try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
   applyTheme();
-  if (theme === 'ega') warn('Palette: TRUE EGA — the 16 hardware colours on black, no glow. Authentic, but lower contrast than the default.');
-  else good('Palette: PHOSPHOR (default) — tuned for CRT glow and WCAG AA contrast.');
+  if (theme === 'ega') warn('Palette: TRUE EGA. The 16 hardware colours on black, no glow. Authentic, but lower contrast than the default.');
+  else good('Palette: PHOSPHOR (default). Tuned for CRT glow and WCAG AA contrast.');
 }
 
 /* ---------------------------------------------------------------------------
@@ -1165,7 +1165,7 @@ function boot() {
   MODE = 'boot'; bodyMode('boot');
   $log().innerHTML = '';
   const lines = [
-    ['LAB980 BIOS v9.80  —  (C) 1988 LAB980 SYSTEMS', 'dim'],
+    ['LAB980 BIOS v9.80    (C) 1988 LAB980 SYSTEMS', 'dim'],
     ['Detecting memory ......... 640K OK', 'dim'],
     ['Detecting display ........ EGA 640x350 16-COLOR', 'dim'],
     ['Detecting audio .......... PC SPEAKER', 'dim'],
@@ -1176,7 +1176,7 @@ function boot() {
 }
 
 function menuHelp() {
-  say('You wander a 10×10 forest looking for the ranger station (R). Move with n/s/e/w, <b>look</b> around, <b>climb</b> for a bearing, and manage thirst, hunger, cold — and a bear. Full commands appear once you\'re playing (type <b>help</b>).');
+  say('You wander a 10×10 forest looking for the ranger station (R). Move with n/s/e/w, <b>look</b> around, <b>climb</b> for a bearing, and manage thirst, hunger, cold, and a bear. Full commands appear once you\'re playing (type <b>help</b>).');
 }
 
 function showMenu() {
@@ -1186,18 +1186,18 @@ function showMenu() {
   say('<span class="dim">a survival text adventure</span>');
   rule();
   say('You\'re lost in the wilderness with no memory of how you got here.');
-  say('Find the <b>ranger station</b> before thirst, hunger, the cold — or the bear — find you.');
+  say('Find the <b>ranger station</b> before thirst, hunger, the cold, or the bear, find you.');
   print('&nbsp;', 'dim');
   say('Choose your ordeal:');
-  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">— forgiving. You start with a canteen &amp; map.</span>');
-  say('  <b class="good">2</b>  BACKCOUNTRY   <span class="dim">— the real thing.</span>');
-  say('  <b class="good">3</b>  SURVIVALIST   <span class="dim">— scarce water, a keen bear, long nights.</span>');
+  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">Forgiving. You start with a canteen &amp; map.</span>');
+  say('  <b class="good">2</b>  BACKCOUNTRY   <span class="dim">The real thing.</span>');
+  say('  <b class="good">3</b>  SURVIVALIST   <span class="dim">Scarce water, a keen bear, long nights.</span>');
   const best = bestScores();
   if (best.easy || best.normal || best.hard) {
     print('&nbsp;', 'dim');
-    say(`<span class="dim">Best scores — Day Hike: ${best.easy||0}   Backcountry: ${best.normal||0}   Survivalist: ${best.hard||0}</span>`);
+    say(`<span class="dim">Best scores.  Day Hike: ${best.easy||0}   Backcountry: ${best.normal||0}   Survivalist: ${best.hard||0}</span>`);
   }
-  if (hasSave()) { print('&nbsp;', 'dim'); say('  <b class="good">continue</b>  — resume your saved run.'); }
+  if (hasSave()) { print('&nbsp;', 'dim'); say('  <b class="good">continue</b>  resumes your saved run.'); }
   print('&nbsp;', 'dim');
   hint(`Type a number and press Enter. (Also: <b>sound</b> for the PC speaker${soundOn ? '' : ' (off)'}, <b>palette</b> for ${theme === 'ega' ? 'the tuned' : 'true-EGA'} colours, <b>screen</b> for ${aspect === 'portrait' ? '4:3' : 'portrait'}.)`);
   if (aspect === 'classic' && isPortraitViewport()) hint('On a phone? Type <b>screen</b> for a taller portrait display.');
@@ -1210,12 +1210,12 @@ function enterPlay(resumed) {
   renderAll();
   if (resumed) {
     print('...resuming your run.', 'dim');
-    say(`You\'re still out here — turn ${S.turn}, ${phaseName()}. The trees go on in every direction.`);
+    say(`You\'re still out here. Turn ${S.turn}, ${phaseName()}. The trees go on in every direction.`);
     rule();
     cmdLook();
   } else {
-    print(`L O S T   I N   T H E   F O R E S T   —   ${S.cfg.label}`, 'banner');
-    say('You come to face-down in the pine duff with no memory of how you got here. Your head throbs. The trees go on in every direction — a wall of green.');
+    print(`L O S T   I N   T H E   F O R E S T   ·   ${S.cfg.label}`, 'banner');
+    say('You come to face-down in the pine duff with no memory of how you got here. Your head throbs. The trees go on in every direction, a wall of green.');
     say('Somewhere out here is a <b>ranger station</b>. Find it before the wilderness wears you down.');
     hint('The panel above is the forest. <span class="me">@</span> is you. Type <b>look</b> to begin, <b>legend</b> for the map key, or <b>help</b> for commands.');
     rule();
