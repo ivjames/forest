@@ -6,7 +6,8 @@
 :root {
   --phosphor: #3bff74;
   --phosphor-dim: #1f9c3f;
-  --phosphor-faint: #12622a;
+  --phosphor-faint: #1c7a38;   /* dividers/scrollbar: >=3:1 on the screen bg */
+  --trail: #238f42;            /* visited-ground glyph: >=4.5:1 (WCAG AA text) */
   --paper: #d6ffe2;          /* brightest — headings, player, station */
   --amber: #ffc24d;          /* warnings, the bear, fire */
   --danger: #ff5b4d;         /* death, low stats */
@@ -165,7 +166,7 @@ body[data-mode="menu"] #keypad { visibility: hidden; }
 .cave     { color: #8fb39a; }
 .ravine   { color: #c67b5a; }
 .tree     { color: var(--phosphor-dim); }
-.seen     { color: var(--phosphor-faint); }
+.seen     { color: var(--trail); }
 
 .warn { color: var(--amber); }
 .bad  { color: var(--danger); text-shadow: 0 0 6px rgba(255,91,77,0.55); }

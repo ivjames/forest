@@ -69,6 +69,19 @@ lantern, and fishing line.
 - **Backcountry** — the intended experience.
 - **Survivalist** — scarce water, a keener bear, long nights, less gear.
 
+## Colour & accessibility
+
+The palette is *EGA-adjacent*, not the exact EGA hardware colours: it draws from
+the same high-intensity EGA hue families (light green, light red, light cyan,
+light magenta, yellow, white) but tuned brighter/softer for a phosphor-CRT glow
+and for contrast. The "EGA 640×350" nameplate is period flavour.
+
+All text and map-glyph colours meet **WCAG 2.1 AA** contrast (≥4.5:1) against the
+screen background — most clear AAA (≥7:1); only the decorative dividers sit lower
+(3.55:1, above the 3:1 UI floor). Information is never carried by colour alone —
+every map feature has a distinct glyph (`~ ^ " % n V R B @`), and reduced-motion
+preferences disable the scanline flicker and text fade.
+
 ## Files
 
 Plain static site — the lab980 house shape, no build step:
