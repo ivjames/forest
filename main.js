@@ -1237,7 +1237,7 @@ function showMenu() {
   if (best.easy || best.normal || best.hard)
     say(`<span class="dim">best: ${best.easy || 0} / ${best.normal || 0} / ${best.hard || 0}</span>`);
   if (hasSave()) say('  <b class="good">continue</b>  <span class="dim">resume your run</span>');
-  hint('<b>1</b>-<b>3</b> to start  ·  <b>sound</b>  ·  <b>palette</b>');
+  hint('<b>1</b>-<b>3</b> to start  ·  <b>help</b>  ·  <b>sound</b>  ·  <b>palette</b>');
   $('cmd').focus();
 }
 
@@ -1319,15 +1319,6 @@ window.addEventListener('DOMContentLoaded', () => {
       if (hpos < history.length - 1) { hpos++; input.value = history[hpos]; }
       else { hpos = history.length; input.value = ''; }
     }
-  });
-
-  // On-screen keypad (mobile-friendly; works everywhere).
-  document.querySelectorAll('#keypad button').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      sfx('key');
-      try { handle(btn.dataset.cmd); } catch (err) { console.error(err); }
-      input.focus();
-    });
   });
 
   // Keep focus on the prompt when tapping the screen (but allow text selection).
