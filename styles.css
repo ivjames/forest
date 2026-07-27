@@ -233,6 +233,7 @@ body[data-mode="menu"] #keypad { visibility: hidden; }
 .cave     { color: #8fb39a; }
 .ravine   { color: #c67b5a; }
 .tree     { color: var(--phosphor-dim); }
+.talltree { color: var(--phosphor); }
 .seen     { color: var(--trail); }
 
 .warn { color: var(--amber); }

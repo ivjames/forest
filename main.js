@@ -53,9 +53,10 @@ const ITEMS = {
 
 /* ---- terrain -------------------------------------------------------------- */
 const TERRAIN = {
-  forest:   { glyph: '*', cls: 'tree'    },
-  water:    { glyph: '≈', cls: 'water'   },
-  hill:     { glyph: '^', cls: 'hill'    },
+  forest:   { glyph: '*', cls: 'tree'     },
+  talltree: { glyph: '♠', cls: 'talltree' },
+  water:    { glyph: '≈', cls: 'water'    },
+  hill:     { glyph: '^', cls: 'hill'     },
   clearing: { glyph: '_', cls: 'clearing'},
   berry:    { glyph: '%', cls: 'berry'   },
   cave:     { glyph: 'n', cls: 'cave'    },
@@ -158,6 +159,7 @@ function generate(diffName) {
 
   // Scattered terrain features.
   const scatter = (t, n) => { for (let i = 0; i < n; i++) { const c = freeCell(['water']); setT(c.x, c.y, t); } };
+  scatter('talltree', 8);       // climbable lookouts, interspersed in the forest
   scatter('hill', 4);
   scatter('clearing', 3);
   scatter('berry', 4);
@@ -687,6 +689,7 @@ function cmdLook() {
     forest:   ['Close-packed pines press in on every side, the light gone green and underwater.',
                'Ferns and deadfall crowd the forest floor. A woodpecker knocks, far off.',
                'The canopy closes overhead; moss softens every trunk and stone.'],
+    talltree: ['A stand of towering old pines rises here, far above the rest of the canopy.'],
     water:    ['A clear stream runs right past your feet, cold and quick.'],
     hill:     ['You stand on a rocky rise. The trees fall away below. A good place to look out.'],
     clearing: ['A grassy clearing opens to the sky. Anything you burn here would be seen for miles.'],
@@ -700,6 +703,8 @@ function cmdLook() {
 
   if (t === 'water') good('Fresh water here. You could <b>drink</b> or <b>fill canteen</b>.');
   if (t === 'berry') good('Ripe berries within reach, ready to <b>forage</b>.');
+  if (t === 'talltree') good('These pines are tall enough to <b>climb</b> for a look around.');
+  if (t === 'hill') good('High ground. You could <b>climb</b> for a wide look around.');
   if (t === 'cave') hint('You\'re sheltered here: no cold at night, and the bear won\'t follow you in.');
 
   // adjacent water
@@ -750,6 +755,8 @@ function cmdGo(word) {
   if (nt === 'water') good('A stream cuts across the ground here. Fresh water.');
   else if (nt === 'berry') good('You wade into berry thickets, ripe to <b>forage</b>.');
   else if (nt === 'cave') hint('You duck into a cave mouth. Shelter from cold and bear.');
+  else if (nt === 'talltree') good('Tall old pines tower here, high enough to <b>climb</b>.');
+  else if (nt === 'hill') good('The ground rises to a rocky lookout. You could <b>climb</b> here.');
   if (S.loot.has(key(nx, ny))) good(`Something is half-buried here: ${ITEMS[S.loot.get(key(nx, ny))].name}.`);
 
   if (fresh) maybeEvent();
@@ -852,13 +859,19 @@ function cmdFish() {
 
 function cmdClimb() {
   const P = S.player;
-  const high = terrainAt(P.x, P.y) === 'hill';
+  const here = terrainAt(P.x, P.y);
+  const high = here === 'hill';
+  const tall = here === 'talltree';
+  if (!high && !tall) {
+    say('Nothing here is tall enough to climb. Find a stand of tall pines (<span class="talltree">♠</span>) or a hilltop (<span class="hill">^</span>) to get above the canopy.');
+    return;
+  }
   if (S.weather === 'storm') { warn('Climbing in this storm would get you killed. Wait it out.'); return; }
   if (isNight() && !hasLight()) { warn('It\'s too dark to see anything from up there. You need a light.'); return; }
 
   say(high
     ? 'You pick your way to the top of the rise and shade your eyes.'
-    : 'You haul yourself up the tallest pine you can find, needles scratching, until the forest opens below.');
+    : 'You haul yourself up a towering old pine, needles scratching, until the forest opens out below.');
 
   S.stationKnown = true;
   const sd = cheby(P, S.station);
@@ -889,7 +902,7 @@ function cmdClimb() {
 }
 
 function cmdBinocs() {
-  if (!(S.inventory.binocs > 0)) { say('You have no binoculars. You could climb a tree to see far.'); return; }
+  if (!(S.inventory.binocs > 0)) { say('You have no binoculars. You could climb a tall pine or a hill to see far.'); return; }
   if (isNight() && !hasLight()) { warn('Too dark to make anything out through the lenses.'); return; }
   const P = S.player;
   say('You raise the binoculars and sweep the horizon slowly.');
@@ -966,10 +979,10 @@ function cmdRest() {
 function cmdLegend() {
   rule(); print('MAP LEGEND', 'banner');
   say(
-    '<span class="me">@</span> you   <span class="station">R</span> ranger station   <span class="bear">B</span> bear   <span class="fire">ф</span> fire\n' +
-    '<span class="tree">*</span> forest   <span class="water">≈</span> water   <span class="hill">^</span> hill   <span class="clearing">_</span> clearing\n' +
-    '<span class="berry">%</span> berries   <span class="cave">n</span> cave (shelter)   <span class="ravine">V</span> ravine (needs rope)\n' +
-    '<span class="loot">r c b f …</span> dropped gear'
+    '<span class="me">@</span> you   <span class="station">R</span> ranger station   <span class="bear">B</span> bear   <span class="fire">φ</span> fire\n' +
+    '<span class="tree">*</span> forest   <span class="talltree">♠</span> tall pines (climb)   <span class="water">≈</span> water\n' +
+    '<span class="hill">^</span> hill (climb)   <span class="clearing">_</span> clearing   <span class="berry">%</span> berries\n' +
+    '<span class="cave">n</span> cave (shelter)   <span class="ravine">V</span> ravine (needs rope)   <span class="loot">r c …</span> gear'
   );
 }
 
@@ -978,7 +991,7 @@ function cmdHelp() {
   say(
     '<b>look</b> (l) · <b>examine</b> &lt;thing&gt;   study surroundings / an item\n' +
     '<b>north south east west</b> (n s e w)   travel\n' +
-    '<b>climb</b> [tree]   scout for the station &amp; bear (a hill sees farther)\n' +
+    '<b>climb</b>   scout for the station &amp; bear (only at tall pines ♠ or hills ^)\n' +
     '<b>take</b> · <b>inventory</b> (i)   pick up / check your pack\n' +
     '<b>drink</b> · <b>fill canteen</b> · <b>eat</b> · <b>forage</b> · <b>fish</b>   water &amp; food\n' +
     '<b>make fire</b>   warmth, bear-ward, rescue signal\n' +
