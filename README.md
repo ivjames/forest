@@ -17,6 +17,12 @@ Open `index.html` in any browser — no build, no server, no dependencies. Pick 
 difficulty on the title screen and go. (On touch, use the button row under the
 screen.)
 
+**Sound is on by default** — an emulated IBM PC speaker (1-bit square-wave
+beeper): footsteps, item pips, a growl when the bear closes, fire crackle, a
+whistle, dusk/dawn cues, and win/lose jingles. It unlocks on your first
+keypress (browser autoplay rules) and remembers your choice; type **`sound`**
+to toggle it.
+
 ```
 look (l) · examine <thing>      study your surroundings, or an item
 north south east west (n s e w) travel one cell

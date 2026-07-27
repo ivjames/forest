@@ -123,6 +123,7 @@ let theme = 'phosphor';       // 'phosphor' (default) | 'ega'
 const SAVE_KEY = 'forest.save.v2';
 const BEST_KEY = 'forest.best.v2';
 const THEME_KEY = 'forest.theme';
+const SOUND_KEY = 'forest.sound';
 
 /* ---------------------------------------------------------------------------
    World generation
@@ -230,8 +231,8 @@ function print(html, cls) {
 }
 const rule = () => $log().appendChild(document.createElement('hr'));
 const say  = (t) => print(t);
-const warn = (t) => { print(t, 'warn'); beep(320, 0.05); };
-const bad  = (t) => { print(t, 'bad');  beep(140, 0.14); };
+const warn = (t) => { print(t, 'warn'); sfx('warn'); };
+const bad  = (t) => { print(t, 'bad');  sfx('hurt'); };
 const good = (t) => print(t, 'good');
 const hint = (t) => print(t, 'hint');
 
@@ -305,22 +306,85 @@ function renderPack() {
 function renderAll() { renderMap(); renderStats(); renderPack(); }
 
 /* ---------------------------------------------------------------------------
-   Sound — tiny Web Audio blips, opt-in
+   Sound — IBM PC speaker emulation (1-bit square-wave beeper)
+
+   The PC speaker was a single square-wave driven by the 8253 timer: no volume,
+   no timbre, just a pitch switched on and off. We reproduce that voice with
+   square oscillators, quick on/off gating, pitch glides for sweeps, and rapid
+   random-pitch bursts for "noise" (how DOS games faked explosions/growls).
    ------------------------------------------------------------------------- */
-let AC = null;
-function beep(freq, dur, type = 'square') {
-  if (!soundOn) return;
-  try {
-    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.value = 0.04;
-    o.connect(g); g.connect(AC.destination);
-    o.start();
-    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
-    o.stop(AC.currentTime + dur);
-  } catch (_) { /* ignore */ }
+let AC = null, MASTER = null;
+function audio() {
+  if (!AC) {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    MASTER = AC.createGain();
+    MASTER.gain.value = 0.5;
+    MASTER.connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume();   // unlocked by the first keypress
+  return AC;
 }
+// one square-wave note at an absolute start time
+function tone(freq, start, dur, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(freq, start);
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(vol, start + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  o.connect(g); g.connect(MASTER);
+  o.start(start); o.stop(start + dur + 0.02);
+}
+// a sequence of [freq, dur] notes played back-to-back (PC-speaker "music")
+function seq(notes, gap = 0, vol = 0.09) {
+  audio(); let t = AC.currentTime + 0.001;
+  for (const n of notes) {
+    const [f, d] = Array.isArray(n) ? n : [n, 0.08];
+    if (f > 0) tone(f, t, d, vol);
+    t += d + gap;
+  }
+}
+// a pitch glide in a single oscillator (sweeps: flare, damage, bear)
+function glide(f0, f1, dur, vol = 0.08) {
+  audio();
+  const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + 0.001;
+  o.type = 'square';
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(MASTER);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+// rapid random-pitch burst — the classic PC-speaker "noise" trick
+function burst(count, lo, hi, step, vol = 0.05) {
+  audio(); let t = AC.currentTime + 0.001;
+  for (let i = 0; i < count; i++) { tone(lo + Math.random() * (hi - lo), t, step, vol); t += step; }
+}
+
+// named effects, mapped to game events
+const SFX = {
+  boot:   () => seq([[784, 0.13]], 0, 0.10),                       // the one BIOS beep
+  type:   () => seq([[1568, 0.006]], 0, 0.028),                    // boot typewriter tick
+  menu:   () => seq([[880, 0.04], [1175, 0.05]], 0, 0.08),
+  key:    () => seq([[1200, 0.006]], 0, 0.02),                     // command entered
+  move:   () => seq([[300, 0.022]], 0, 0.035),                     // footstep
+  bump:   () => seq([[140, 0.09]], 0, 0.07),                       // blocked / edge
+  take:   () => seq([[659, 0.04], [988, 0.05]], 0, 0.08),          // pick up
+  eat:    () => seq([[440, 0.05], [392, 0.05]], 0, 0.06),          // eat / drink
+  warn:   () => seq([[370, 0.055]], 0, 0.05),
+  hurt:   () => glide(200, 90, 0.16, 0.09),                        // took damage
+  bear:   () => { glide(210, 70, 0.34, 0.10); burst(7, 60, 170, 0.03, 0.05); },
+  fire:   () => burst(11, 500, 1500, 0.02, 0.04),                  // crackle
+  whistle:() => seq([[1760, 0.06], [2093, 0.11]], 0, 0.07),
+  flare:  () => glide(320, 1900, 0.42, 0.07),
+  night:  () => seq([[311, 0.12], [233, 0.17]], 0.02, 0.06),       // dusk, descending
+  dawn:   () => seq([[440, 0.10], [659, 0.15]], 0.02, 0.06),       // sunrise, rising
+  win:    () => seq([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.24]], 0.008, 0.09), // C-E-G-C
+  lose:   () => seq([[392, 0.16], [330, 0.16], [262, 0.16], [175, 0.36]], 0.008, 0.09),  // descending
+  toggle: () => seq([[660, 0.06], [990, 0.07]], 0, 0.08),
+};
+function sfx(name) { if (!soundOn) return; try { const f = SFX[name]; if (f) f(); } catch (_) { /* ignore */ } }
 
 /* ---------------------------------------------------------------------------
    Turn engine
@@ -349,8 +413,8 @@ function advanceTurn() {
 
   // Day/night boundary flavor.
   const p = S.turn % CYCLE;
-  if (p === DAY_LEN) warn('The light drains from the trees. Night falls — and the cold with it.');
-  else if (p === 0 && S.turn > 0) good('Grey dawn seeps through the canopy. You made it through the night.');
+  if (p === DAY_LEN) { sfx('night'); warn('The light drains from the trees. Night falls — and the cold with it.'); }
+  else if (p === 0 && S.turn > 0) { sfx('dawn'); good('Grey dawn seeps through the canopy. You made it through the night.'); }
 
   for (let t = 0; t < ticks; t++) metabolize();
 
@@ -466,7 +530,7 @@ function tryMoveBear(step) {
 function bearEncounter() {
   const P = S.player;
   S.bearGlyphUntil = S.turn + 1;
-  beep(90, 0.25, 'sawtooth');
+  sfx('bear');
 
   if (S.fireCell === key(P.x, P.y) && S.turn <= S.fireUntil) {
     warn('The bear lunges — then recoils from your fire, huffing, and crashes back into the trees.');
@@ -596,8 +660,7 @@ function endGame(win, reason) {
   const isBest = saveBest(S.diff, S.score);
   say(`Difficulty: <b>${S.cfg.label}</b>   Turns: <b>${S.turn}</b>   Items: <b>${Object.values(S.inventory).reduce((a,b)=>a+b,0)}</b>`);
   say(`SCORE: <b class="good">${S.score}</b>${isBest ? '  <span class="warn">◄ NEW BEST!</span>' : `   (best ${bestScores()[S.diff] || 0})`}`);
-  beep(win ? 660 : 120, 0.3, win ? 'square' : 'sawtooth');
-  if (win) { beep(880, 0.25); }
+  sfx(win ? 'win' : 'lose');
   hint('Type <b>restart</b> for a new forest, or <b>menu</b> to change difficulty.');
   $('cmd').focus();
 }
@@ -660,15 +723,15 @@ function cmdGo(word) {
   if (!dir) { warn('Go where? Try north, south, east, or west.'); return; }
   const d = DIRS[dir];
   const nx = S.player.x + d.dx, ny = S.player.y + d.dy;
-  if (!inBounds(nx, ny)) { say(`You push ${dir}, but the forest only thickens — that\'s the edge of the woods.`); return; }
+  if (!inBounds(nx, ny)) { sfx('bump'); say(`You push ${dir}, but the forest only thickens — that\'s the edge of the woods.`); return; }
 
   if (terrainAt(nx, ny) === 'ravine') {
     if (S.inventory.rope > 0) { say(`You rig your rope and climb down and across the ravine, heading <b>${dir}</b>.`); }
-    else { warn(`A deep ravine blocks the way ${dir}. You\'d need a rope to cross it. (try another direction)`); return; }
+    else { sfx('bump'); warn(`A deep ravine blocks the way ${dir}. You\'d need a rope to cross it. (try another direction)`); return; }
   } else {
     say(`You push on through the trees, heading <b>${dir}</b>.`);
   }
-  beep(220, 0.03);
+  sfx('move');
 
   S.player.x = nx; S.player.y = ny;
   const fresh = !S.visited.has(key(nx, ny));
@@ -697,7 +760,7 @@ function cmdTake(rest) {
   S.loot.delete(k);
   S.inventory[id] = (S.inventory[id] || 0) + 1;
   good(`You take the ${ITEMS[id].name}.`);
-  beep(520, 0.05);
+  sfx('take');
   if (id === 'map') { S.stationKnown = true; for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the whole valley — the station is marked.'); }
   if (id === 'canteen' && S.canteenWater === 0) hint('Stand on water and <b>fill canteen</b> to carry drinks.');
   if (id === 'firetools') hint('You can <b>make fire</b> now — warmth, a bear-ward, a signal.');
@@ -731,6 +794,7 @@ function cmdDrink() {
   const onWater = terrainAt(S.player.x, S.player.y) === 'water';
   if (onWater) {
     S.stats.thirst = S.stats.thirstMax;
+    sfx('eat');
     good('You kneel and drink deep from the cold stream. Much better.');
     if (S.inventory.canteen > 0 && S.canteenWater < 3) { S.canteenWater = 3; hint('You top off your canteen.'); }
     advanceTurn();
@@ -754,6 +818,7 @@ function cmdEat() {
   if (!(S.inventory.rations > 0)) { say('You have no rations. Forage berries or fish for food.'); return; }
   S.inventory.rations--; if (S.inventory.rations <= 0) delete S.inventory.rations;
   S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 7);
+  sfx('eat');
   good('You tear into the trail rations. Not gourmet, but it quiets your stomach.');
   advanceTurn();
 }
@@ -765,6 +830,7 @@ function cmdForage() {
     bad('You eat a handful too fast — some were bitter and wrong. Your stomach twists. (-1 health)');
   } else {
     S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 4);
+    sfx('eat');
     good('You strip a good handful of ripe berries and eat. Tart, but food.');
   }
   advanceTurn();
@@ -775,7 +841,7 @@ function cmdFish() {
   if (!(S.inventory.fishline > 0)) { say('You have no fishing line.'); return; }
   say('You cast your line into the current and wait, still as the trees.');
   advanceTurn(); if (S.over) return;
-  if (chance(0.6)) { S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 6); good('A tug — you land a fat trout and eat well.'); }
+  if (chance(0.6)) { S.stats.hunger = Math.min(S.stats.hungerMax, S.stats.hunger + 6); sfx('eat'); good('A tug — you land a fat trout and eat well.'); }
   else say('Nothing bites. The line comes up empty.');
 }
 
@@ -842,7 +908,7 @@ function cmdFire() {
   if (S.weather === 'rain' || S.weather === 'storm') { warn('The rain drowns every spark. You can\'t light a fire in this.'); return; }
   S.fireCell = key(S.player.x, S.player.y); S.fireUntil = S.turn + 4;
   good('You strike sparks into dry tinder and coax up a crackling fire. Warmth, and a ward against the bear.');
-  beep(440, 0.08);
+  sfx('fire');
   const sd = cheby(S.player, S.station);
   const seen = sd <= 2 || (t === 'clearing' && sd <= 4);
   if (seen) good('A shout answers from the trees — someone at the station has seen your smoke!');
@@ -853,7 +919,7 @@ function cmdFire() {
 function cmdWhistle() {
   if (!(S.inventory.whistle > 0)) { say('You have no whistle.'); return; }
   say('You put the tin whistle to your lips and blow — a shrill blast splits the quiet.');
-  beep(1200, 0.15);
+  sfx('whistle');
   if (cheby(S.player, S.bear) <= 5) { warn('You hear the bear crash away in alarm.'); S.bearFleeUntil = S.turn + 5; S.bearState = 'flee'; }
   else hint('Only the echo answers.');
   const sd = cheby(S.player, S.station);
@@ -865,7 +931,7 @@ function cmdFlare() {
   if (!(S.inventory.flare > 0)) { say('You have no flare.'); return; }
   S.inventory.flare--; if (S.inventory.flare <= 0) delete S.inventory.flare;
   say('You crack the flare and it screams up into the sky, burning white.');
-  beep(1500, 0.4);
+  sfx('flare');
   for (let x = 0; x < SIZE; x++) for (let y = 0; y < SIZE; y++) S.mapped.add(key(x, y));
   S.stationKnown = true; S.bearGlyphUntil = S.turn + 1;
   good('For one blazing moment the whole valley is lit — the map is yours.');
@@ -1044,10 +1110,12 @@ function handle(raw) {
 /* ---------------------------------------------------------------------------
    Sound toggle / UI helpers
    ------------------------------------------------------------------------- */
+function loadSound() { try { return localStorage.getItem(SOUND_KEY) !== 'off'; } catch (_) { return true; } }
 function toggleSound() {
   soundOn = !soundOn;
-  if (soundOn) { beep(660, 0.08); good('Sound ON.'); }
-  else say('Sound OFF.');
+  try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (_) {}
+  if (soundOn) { sfx('toggle'); good('PC speaker ON.'); }
+  else say('PC speaker OFF.');
 }
 
 function loadTheme() { try { return localStorage.getItem(THEME_KEY) === 'ega' ? 'ega' : 'phosphor'; } catch (_) { return 'phosphor'; } }
@@ -1071,7 +1139,7 @@ function typeLines(lines, delay, done) {
     if (MODE !== 'boot') return;                 // abandoned; another screen took over
     if (i >= lines.length) { if (done) done(); return; }
     const [text, cls] = Array.isArray(lines[i]) ? lines[i] : [lines[i], ''];
-    print(text, cls); beep(1400, 0.008);
+    print(text, cls); if (text.trim()) sfx('type');
     i++; setTimeout(next, delay);
   })();
 }
@@ -1114,7 +1182,7 @@ function showMenu() {
   }
   if (hasSave()) { print('&nbsp;', 'dim'); say('  <b class="good">continue</b>  — resume your saved run.'); }
   print('&nbsp;', 'dim');
-  hint(`Type a number and press Enter. (Also: <b>sound</b> for audio, <b>palette</b> for ${theme === 'ega' ? 'the tuned' : 'true-EGA'} colours.)`);
+  hint(`Type a number and press Enter. (Also: <b>sound</b> for the PC speaker${soundOn ? '' : ' (off)'}, <b>palette</b> for ${theme === 'ega' ? 'the tuned' : 'true-EGA'} colours.)`);
   $('cmd').focus();
 }
 
@@ -1140,6 +1208,7 @@ function enterPlay(resumed) {
 }
 
 function beginGame(diffName) {
+  sfx('menu');
   S = generate(diffName);
   autosave();
   enterPlay(false);
@@ -1156,11 +1225,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   theme = loadTheme();
   applyTheme();
+  soundOn = loadSound();
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const raw = input.value;
-    if (raw.trim()) { history.push(raw); hpos = history.length; }
+    if (raw.trim()) { history.push(raw); hpos = history.length; sfx('key'); }
     input.value = '';
     try { handle(raw); }
     catch (err) { bad('Something went wrong in the woods: ' + err.message); console.error(err); }
@@ -1177,6 +1247,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // On-screen keypad (mobile-friendly; works everywhere).
   document.querySelectorAll('#keypad button').forEach((btn) => {
     btn.addEventListener('click', () => {
+      sfx('key');
       try { handle(btn.dataset.cmd); } catch (err) { console.error(err); }
       input.focus();
     });
