@@ -23,6 +23,11 @@ whistle, dusk/dawn cues, and win/lose jingles. It unlocks on your first
 keypress (browser autoplay rules) and remembers your choice; type **`sound`**
 to toggle it.
 
+**Screen shape.** The default is the period-correct **4:3 EGA** display. On a
+phone, type **`screen`** for an optional **portrait** mode — a tall 9:16 EGA
+screen that fills the device, turning the extra height into more visible log.
+The choice is remembered, and the title screen suggests it on portrait phones.
+
 ```
 look (l) · examine <thing>      study your surroundings, or an item
 north south east west (n s e w) travel one cell

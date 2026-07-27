@@ -94,6 +94,21 @@ html, body {
     0 0 0 2px #1a1a16;
 }
 
+/* ---- optional PORTRAIT mode (opt-in via the "screen" command) ------------
+   A tall 9:16 EGA screen that fills a phone. On a width-bound phone the box
+   keeps the same width (so text stays the same size) and simply grows taller —
+   the extra height flows straight into the scrolling log. The vh cap keeps it
+   from overflowing shorter screens (and makes a sensible tall box on desktop). */
+body[data-aspect="portrait"] #monitor,
+body[data-aspect="portrait"] #keypad {
+  aspect-ratio: 9 / 16;
+  width: min(96vw, 47vh);
+  max-width: 520px;
+}
+body[data-aspect="portrait"] #keypad {
+  aspect-ratio: auto;                   /* keypad keeps its natural height */
+}
+
 #crt {
   position: relative;
   height: 100%;
