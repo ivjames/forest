@@ -74,7 +74,7 @@ const DIR_ALIAS = { n:'north', s:'south', e:'east', w:'west',
 /* ---- difficulty ----------------------------------------------------------- */
 const DIFFS = {
   easy:   { label: 'DAY HIKE',      thirst: 12, hunger: 18, health: 6, warmth: 8,
-            bearRange: 2, bearSpeed: 0.55, water: 11, start: ['canteen', 'map'], loot: 11 },
+            bearRange: 2, bearSpeed: 0.55, water: 11, start: ['canteen'], loot: 11, lightAround: true },
   normal: { label: 'BACKCOUNTRY',   thirst: 9,  hunger: 14, health: 5, warmth: 6,
             bearRange: 3, bearSpeed: 0.70, water: 9,  start: [],              loot: 12 },
   hard:   { label: 'SURVIVALIST',   thirst: 7,  hunger: 12, health: 4, warmth: 5,
@@ -188,9 +188,7 @@ function generate(diffName) {
   for (const id of cfg.start) inventory[id] = (inventory[id] || 0) + 1;
   const canteenWater = inventory.canteen ? 3 : 0;
 
-  // Starting with the map reveals the terrain (never the station).
-  const mapped = new Set();
-  if (inventory.map) for (let x = 0; x < SIZE; x++) for (let y = 0; y < SIZE; y++) mapped.add(key(x, y));
+  const mapped = new Set();   // cells revealed by tools/adjacency (terrain only)
 
   return {
     diff: diffName, cfg,
@@ -728,6 +726,16 @@ function cmdLook() {
   if (S.loot.has(key(P.x, P.y))) good(`Half-buried here: <b>${ITEMS[S.loot.get(key(P.x, P.y))].name}</b>. Try <b>take</b>.`);
 }
 
+// Easy mode: "light up" the ground in the ring around the player as they go
+// (terrain only — and the station if it's right beside you). Off in harder modes.
+function revealAround(x, y) {
+  if (!S.cfg.lightAround) return;
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+    if (inBounds(x + dx, y + dy)) S.mapped.add(key(x + dx, y + dy));
+  }
+  if (cheby({ x, y }, S.station) <= 1) S.stationKnown = true;
+}
+
 function cmdGo(word) {
   const dir = DIR_ALIAS[word];
   if (!dir) { warn('Go where? Try north, south, east, or west.'); return; }
@@ -746,6 +754,7 @@ function cmdGo(word) {
   S.player.x = nx; S.player.y = ny;
   const fresh = !S.visited.has(key(nx, ny));
   S.visited.add(key(nx, ny));
+  revealAround(nx, ny);
   advanceTurn();
   if (S.over) return;
 
@@ -1157,8 +1166,8 @@ function toggleTheme() {
   theme = theme === 'ega' ? 'phosphor' : 'ega';
   try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
   applyTheme();
-  if (theme === 'ega') warn('Palette: TRUE EGA. The 16 hardware colours on black, no glow. Authentic, but lower contrast than the default.');
-  else good('Palette: PHOSPHOR (default). Tuned for CRT glow and WCAG AA contrast.');
+  if (theme === 'ega') warn('Palette: TRUE EGA (default). The 16 hardware colours on black.');
+  else good('Palette: PHOSPHOR. A green-tuned, high-contrast colour set.');
 }
 
 /* ---------------------------------------------------------------------------
@@ -1233,7 +1242,7 @@ function showMenu() {
   say('Find the <b>ranger station</b> before thirst, hunger, the cold, or the bear, find you.');
   print('&nbsp;', 'dim');
   say('Choose your ordeal:');
-  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">Forgiving. You start with a canteen &amp; map.</span>');
+  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">Forgiving. Start with a canteen; the ground lights up around you.</span>');
   say('  <b class="good">2</b>  BACKCOUNTRY   <span class="dim">The real thing.</span>');
   say('  <b class="good">3</b>  SURVIVALIST   <span class="dim">Scarce water, a keen bear, long nights.</span>');
   const best = bestScores();
@@ -1272,6 +1281,7 @@ function enterPlay(resumed) {
 function beginGame(diffName) {
   sfx('menu');
   S = generate(diffName);
+  revealAround(S.player.x, S.player.y);   // easy mode: light up the starting ring
   autosave();
   enterPlay(false);
 }

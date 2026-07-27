@@ -26,9 +26,12 @@
   --water: #57c9ff;
   --berry: #e07be0;
   --sky-night: #7fa8ff;
-  --glow: 0 0 4px rgba(59, 255, 116, 0.5);
+  --glow: none;              /* no phosphor bloom — flat text in every palette */
   --mono: "PxIBMVGA", "Courier New", "DejaVu Sans Mono", "Liberation Mono", monospace;
 }
+
+/* No glow anywhere: flatten every text-shadow inside the screen. */
+#screen, #screen * { text-shadow: none; }
 
 /* -----------------------------------------------------------------------------
    TRUE-EGA palette (opt-in via the "palette" command). The exact 16-colour EGA
