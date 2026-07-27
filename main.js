@@ -29,7 +29,7 @@ const ITEMS = {
               aliases: ['binoculars', 'binocs', 'glasses', 'scope'] },
   firetools:{ name: 'flint & steel',  glyph: 'f', desc: 'Make fire: warmth, a bear-ward, and a rescue signal. "make fire".',
               aliases: ['flint', 'steel', 'firetools', 'fire tools', 'matches', 'lighter'] },
-  map:      { name: 'tattered map',   glyph: 'm', desc: 'Marks the ranger station and the lay of the land.',
+  map:      { name: 'tattered map',   glyph: 'm', desc: 'Reveals the surrounding terrain (but not the station itself).',
               aliases: ['map', 'chart'] },
   firstaid: { name: 'first-aid kit',  glyph: '+', desc: 'Patch yourself up. "bandage".',
               aliases: ['first-aid', 'first aid', 'firstaid', 'kit', 'medkit', 'bandage', 'aid'] },
@@ -186,6 +186,10 @@ function generate(diffName) {
   for (const id of cfg.start) inventory[id] = (inventory[id] || 0) + 1;
   const canteenWater = inventory.canteen ? 3 : 0;
 
+  // Starting with the map reveals the terrain (never the station).
+  const mapped = new Set();
+  if (inventory.map) for (let x = 0; x < SIZE; x++) for (let y = 0; y < SIZE; y++) mapped.add(key(x, y));
+
   return {
     diff: diffName, cfg,
     player, station, bear: { x: den.x, y: den.y }, den,
@@ -193,8 +197,8 @@ function generate(diffName) {
     terrain, loot,
     inventory, canteenWater,
     visited: new Set([key(player.x, player.y)]),
-    mapped: new Set(),        // cells revealed by map/flare
-    stationKnown: !!inventory.map,
+    mapped,                     // cells revealed by map/flare (terrain only)
+    stationKnown: false,        // R appears on the map only once you spot it
     stats: { health: cfg.health, thirst: cfg.thirst, hunger: cfg.hunger, warmth: cfg.warmth,
              healthMax: cfg.health, thirstMax: cfg.thirst, hungerMax: cfg.hunger, warmthMax: cfg.warmth },
     turn: 0,
@@ -614,7 +618,6 @@ function maybeEvent() {
     case 'note': {
       const b = bearing(S.player, S.station);
       hint(`A hiker\'s journal, rain-swollen. The last legible line: "station lies to the ${b === 'right here' ? 'nearby' : b}..."`);
-      S.stationKnown = true;
       break;
     }
     case 'deer': say('A deer freezes, watches you, and bounds away through the ferns. For a moment it\'s almost peaceful.'); break;
@@ -763,7 +766,7 @@ function cmdTake(rest) {
   S.inventory[id] = (S.inventory[id] || 0) + 1;
   good(`You take the ${ITEMS[id].name}.`);
   sfx('take');
-  if (id === 'map') { S.stationKnown = true; for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the whole valley. The station is marked.'); }
+  if (id === 'map') { for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the lay of the land, though the station itself isn\'t marked. You\'ll have to spot it.'); }
   if (id === 'canteen' && S.canteenWater === 0) hint('Stand on water and <b>fill canteen</b> to carry drinks.');
   if (id === 'firetools') hint('You can <b>make fire</b> now: warmth, a bear-ward, a signal.');
   if (id === 'binocs') hint('Try <b>use binoculars</b> to scan the distance.');

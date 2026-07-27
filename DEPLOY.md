@@ -29,12 +29,18 @@ server {
     root /var/www/forest;
     index index.html;
 
-    location / { try_files $uri $uri/ =404; }
+    # HTML/CSS/JS: always revalidate so a `git pull` shows up immediately
+    # (304 when unchanged). This avoids stale-cache surprises on iOS/Safari,
+    # where there is no hard-refresh.
+    location / {
+        try_files $uri $uri/ =404;
+        add_header Cache-Control "no-cache" always;
+    }
 
-    # cache the fingerprint-stable static assets
-    location ~* \.(?:woff2?|css|js|svg|png)$ {
-        expires 7d;
-        add_header Cache-Control "public";
+    # Fonts are effectively immutable: cache them hard.
+    location ~* \.(?:woff2?)$ {
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000" always;
     }
 }
 NGINX
@@ -53,9 +59,9 @@ cd /var/www/forest && git pull
 ```
 
 That's it — static files, so nginx serves the new versions immediately. No
-build, no restart, no pm2. (Because assets are cached for 7 days, a hard
-refresh may be needed to see CSS/JS/font changes right after a deploy; the
-HTML itself is always fresh.)
+build, no restart, no pm2. With the `no-cache` headers above, browsers
+revalidate HTML/CSS/JS on every load, so a plain reload shows the new version
+(no hard refresh needed — which matters on iOS/Safari, where there isn't one).
 
 ## Notes
 
