@@ -1283,6 +1283,20 @@ window.addEventListener('DOMContentLoaded', () => {
   applyTheme();
   soundOn = loadSound();
 
+  // Track the visible viewport so the screen sits above the on-screen keyboard
+  // instead of sliding under it. Sets --vh (visible height) and body.kbd.
+  const vv = window.visualViewport;
+  function fitViewport() {
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vh', h + 'px');
+    document.body.classList.toggle('kbd', vv ? (window.innerHeight - h > 120) : false);
+    const log = $('log'); if (log) log.scrollTop = log.scrollHeight;
+  }
+  if (vv) { vv.addEventListener('resize', fitViewport); vv.addEventListener('scroll', fitViewport); }
+  window.addEventListener('resize', fitViewport);
+  window.addEventListener('orientationchange', () => setTimeout(fitViewport, 100));
+  fitViewport();
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const raw = input.value;

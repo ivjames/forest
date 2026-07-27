@@ -108,17 +108,25 @@ html, body {
 /* ---- the desk the monitor sits on ---------------------------------------- */
 #desk {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* --vh tracks the *visible* viewport (above the keyboard) via JS; falls back
+     to the dynamic viewport height. This keeps the input above the keyboard. */
+  height: var(--vh, 100dvh);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: clamp(8px, 1.6vh, 18px);
   padding: clamp(6px, 2vmin, 22px);
-  overflow-y: auto;                       /* if the keyboard shrinks things, scroll rather than clip */
+  overflow: hidden;
   background:
     radial-gradient(120% 90% at 50% 30%, #14170f 0%, #0a0b07 55%, #000 100%);
 }
+/* While the on-screen keyboard is up, drop the (now redundant) keypad so all
+   the visible height goes to the screen and the input stays above the keys. */
+body.kbd #keypad { display: none; }
 
 /* Touch devices: anchor the screen to the top so the on-screen keyboard just
    covers the bottom instead of shoving a vertically-centred box around. */
