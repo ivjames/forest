@@ -967,6 +967,8 @@ function handleMenu(input) {
 }
 
 function handle(raw) {
+  if (MODE === 'boot') return;                   // ignore input during the boot sequence
+
   const input = raw.trim().toLowerCase();
   if (!input && MODE !== 'play') return;
 
@@ -1051,6 +1053,7 @@ function bodyMode(m) { document.body.dataset.mode = m; }
 function typeLines(lines, delay, done) {
   let i = 0;
   (function next() {
+    if (MODE !== 'boot') return;                 // abandoned; another screen took over
     if (i >= lines.length) { if (done) done(); return; }
     const [text, cls] = Array.isArray(lines[i]) ? lines[i] : [lines[i], ''];
     print(text, cls); beep(1400, 0.008);
