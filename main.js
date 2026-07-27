@@ -1227,23 +1227,17 @@ function showMenu() {
   MODE = 'menu'; bodyMode('menu');
   $log().innerHTML = '';
   print('L O S T   I N   T H E   F O R E S T', 'banner');
-  say('<span class="dim">a survival text adventure</span>');
+  say('<span class="dim">Find the ranger station. Survive.</span>');
   rule();
-  say('You\'re lost in the wilderness with no memory of how you got here.');
-  say('Find the <b>ranger station</b> before thirst, hunger, the cold, or the bear, find you.');
-  print('&nbsp;', 'dim');
   say('Choose your ordeal:');
-  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">Forgiving. A canteen and a map at your feet; nearby ground lights up.</span>');
-  say('  <b class="good">2</b>  BACKCOUNTRY   <span class="dim">The real thing.</span>');
-  say('  <b class="good">3</b>  SURVIVALIST   <span class="dim">Scarce water, a keen bear, long nights.</span>');
+  say('  <b class="good">1</b>  DAY HIKE     <span class="dim">forgiving</span>');
+  say('  <b class="good">2</b>  BACKCOUNTRY  <span class="dim">the standard run</span>');
+  say('  <b class="good">3</b>  SURVIVALIST  <span class="dim">scarce, brutal</span>');
   const best = bestScores();
-  if (best.easy || best.normal || best.hard) {
-    print('&nbsp;', 'dim');
-    say(`<span class="dim">Best scores.  Day Hike: ${best.easy||0}   Backcountry: ${best.normal||0}   Survivalist: ${best.hard||0}</span>`);
-  }
-  if (hasSave()) { print('&nbsp;', 'dim'); say('  <b class="good">continue</b>  resumes your saved run.'); }
-  print('&nbsp;', 'dim');
-  hint(`Type a number and press Enter. (Also: <b>sound</b> for the PC speaker${soundOn ? '' : ' (off)'}, <b>palette</b> for ${theme === 'ega' ? 'the tuned' : 'true-EGA'} colours.)`);
+  if (best.easy || best.normal || best.hard)
+    say(`<span class="dim">best: ${best.easy || 0} / ${best.normal || 0} / ${best.hard || 0}</span>`);
+  if (hasSave()) say('  <b class="good">continue</b>  <span class="dim">resume your run</span>');
+  hint('<b>1</b>-<b>3</b> to start  ·  <b>sound</b>  ·  <b>palette</b>');
   $('cmd').focus();
 }
 

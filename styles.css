@@ -214,6 +214,16 @@ body[data-mode="idle"] #keypad,
 body[data-mode="boot"] #keypad,
 body[data-mode="menu"] #keypad { visibility: hidden; }
 
+/* Title / boot / power-on: these screens must fit without scrolling. Tighten
+   the line spacing and never scroll (the log only scrolls during play). */
+body[data-mode="menu"] #log,
+body[data-mode="boot"] #log,
+body[data-mode="idle"] #log { overflow: hidden; }
+body[data-mode="menu"] #log p,
+body[data-mode="boot"] #log p,
+body[data-mode="idle"] #log p { margin-bottom: 0.2em; }
+body[data-mode="menu"] #log hr { margin: 0.35em 0; }
+
 .blink { animation: blink 1.1s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: 0.25; } }
 
@@ -347,8 +357,24 @@ body[data-mode="menu"] #keypad { visibility: hidden; }
 #keypad button:hover { background: #10240f; border-color: var(--phosphor-dim); }
 #keypad button:active { background: var(--phosphor-dim); color: #041004; }
 
+/* Phones: the 4:3 box is too short to hold the HUD + log + menu. Let the
+   monitor fill the vertical space (a taller portrait CRT) so nothing is
+   cramped and the title screen fits without scrolling. Text still scales by
+   width, so it stays the same size — only the height grows. Desktop/tablet
+   keep the classic 4:3 monitor. */
+@media (max-width: 560px) {
+  #monitor {
+    aspect-ratio: auto;
+    width: 96vw;
+    max-width: none;
+    flex: 1 1 auto;          /* fill the height above the keypad */
+    min-height: 0;
+  }
+  #keypad { width: 96vw; max-width: none; flex: 0 0 auto; }
+}
+
 /* short / wide viewports: give the screen more room, shrink chrome */
-@media (max-height: 620px) {
+@media (max-height: 620px) and (min-width: 561px) {
   #monitor { width: min(96vw, 150vh); }
   #keypad button { padding: 4px 8px; }
 }
