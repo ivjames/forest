@@ -120,13 +120,11 @@ let S = null;                 // game state
 let MODE = 'boot';            // boot | menu | play | over
 let soundOn = false;
 let theme = 'ega';            // 'ega' (default) | 'phosphor'
-let aspect = 'classic';       // 'classic' 4:3 (default) | 'portrait' 9:16
 
 const SAVE_KEY = 'forest.save.v2';
 const BEST_KEY = 'forest.best.v2';
 const THEME_KEY = 'forest.theme';
 const SOUND_KEY = 'forest.sound';
-const ASPECT_KEY = 'forest.aspect';
 
 /* ---------------------------------------------------------------------------
    World generation
@@ -182,6 +180,13 @@ function generate(diffName) {
   for (let i = 0; i < placeCount; i++) {
     const c = freeCell(['ravine']);
     loot.set(key(c.x, c.y), bag[i]);
+  }
+
+  // Easy mode: leave a tattered map right where you wake up (only one, on the
+  // starting cell). Picking it up reveals the terrain — never the station.
+  if (cfg.lightAround) {
+    for (const [k, v] of loot) if (v === 'map') loot.delete(k);
+    loot.set(key(player.x, player.y), 'map');
   }
 
   const inventory = {};
@@ -1005,7 +1010,7 @@ function cmdHelp() {
     '<b>drink</b> · <b>fill canteen</b> · <b>eat</b> · <b>forage</b> · <b>fish</b>   water &amp; food\n' +
     '<b>make fire</b>   warmth, bear-ward, rescue signal\n' +
     '<b>use binoculars</b> · <b>blow whistle</b> · <b>use flare</b> · <b>bandage</b>\n' +
-    '<b>rest</b> · <b>legend</b> · <b>sound</b> · <b>palette</b> · <b>screen</b> · <b>restart</b> · <b>menu</b>'
+    '<b>rest</b> · <b>legend</b> · <b>sound</b> · <b>palette</b> · <b>restart</b> · <b>menu</b>'
   );
   hint('Goal: reach the RANGER STATION (R), or signal it with a fire/flare. Mind thirst, hunger, cold, and the bear.');
 }
@@ -1058,7 +1063,6 @@ function handleMenu(input) {
   if (/^(c|continue|resume)/.test(input) && hasSave()) { if (loadSave()) { MODE = 'play'; enterPlay(true); return; } }
   if (/^(sound|mute|audio)/.test(input)) { toggleSound(); return; }
   if (/^(palette|ega|theme|colou?rs)/.test(input)) { toggleTheme(); return; }
-  if (/^(screen|portrait|landscape|classic|orient|rotate)/.test(input)) { toggleAspect(); return; }
   if (/^(help|\?|controls)/.test(input)) { menuHelp(); return; }
   say('Type <b>1</b>, <b>2</b>, or <b>3</b> to choose a difficulty' + (hasSave() ? ', or <b>continue</b> your saved run.' : '.'));
 }
@@ -1078,7 +1082,6 @@ function handle(raw) {
     if (/^(menu|title)/.test(input)) return showMenu();
     if (/^(sound|mute)/.test(input)) return toggleSound();
     if (/^(palette|ega|theme|colou?rs)/.test(input)) return toggleTheme();
-    if (/^(screen|portrait|landscape|classic|orient|rotate)/.test(input)) return toggleAspect();
     hint('The game is over. Type <b>restart</b> to play again, or <b>menu</b> to change difficulty.');
     return;
   }
@@ -1128,7 +1131,6 @@ function handle(raw) {
     case 'map': case 'status': case 'stats': say('You take stock. (See the panel above.)'); break;
     case 'sound': case 'mute': case 'audio': toggleSound(); break;
     case 'palette': case 'ega': case 'theme': case 'colors': case 'colours': toggleTheme(); break;
-    case 'screen': case 'portrait': case 'landscape': case 'classic': case 'orient': case 'rotate': toggleAspect(); break;
     case 'help': case '?': case 'commands': cmdHelp(); break;
     case 'menu': case 'title': case 'quit': showMenu(); return;
     case 'restart': case 'new': beginGame(S.diff); return;
@@ -1151,17 +1153,6 @@ function toggleSound() {
 function loadTheme() { try { return localStorage.getItem(THEME_KEY) === 'phosphor' ? 'phosphor' : 'ega'; } catch (_) { return 'ega'; } }
 function applyTheme() { document.body.dataset.theme = theme; }
 
-function loadAspect() { try { return localStorage.getItem(ASPECT_KEY) === 'portrait' ? 'portrait' : 'classic'; } catch (_) { return 'classic'; } }
-function applyAspect() { document.body.dataset.aspect = aspect; }
-function toggleAspect() {
-  aspect = aspect === 'portrait' ? 'classic' : 'portrait';
-  try { localStorage.setItem(ASPECT_KEY, aspect); } catch (_) {}
-  applyAspect();
-  sfx('menu');
-  if (aspect === 'portrait') good('Screen: PORTRAIT. A tall 9:16 display, better for phones.');
-  else good('Screen: CLASSIC. The 4:3 EGA display (default).');
-}
-const isPortraitViewport = () => window.matchMedia && window.matchMedia('(max-width: 760px) and (orientation: portrait)').matches;
 function toggleTheme() {
   theme = theme === 'ega' ? 'phosphor' : 'ega';
   try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
@@ -1242,7 +1233,7 @@ function showMenu() {
   say('Find the <b>ranger station</b> before thirst, hunger, the cold, or the bear, find you.');
   print('&nbsp;', 'dim');
   say('Choose your ordeal:');
-  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">Forgiving. Start with a canteen; the ground lights up around you.</span>');
+  say('  <b class="good">1</b>  DAY HIKE      <span class="dim">Forgiving. A canteen and a map at your feet; nearby ground lights up.</span>');
   say('  <b class="good">2</b>  BACKCOUNTRY   <span class="dim">The real thing.</span>');
   say('  <b class="good">3</b>  SURVIVALIST   <span class="dim">Scarce water, a keen bear, long nights.</span>');
   const best = bestScores();
@@ -1252,8 +1243,7 @@ function showMenu() {
   }
   if (hasSave()) { print('&nbsp;', 'dim'); say('  <b class="good">continue</b>  resumes your saved run.'); }
   print('&nbsp;', 'dim');
-  hint(`Type a number and press Enter. (Also: <b>sound</b> for the PC speaker${soundOn ? '' : ' (off)'}, <b>palette</b> for ${theme === 'ega' ? 'the tuned' : 'true-EGA'} colours, <b>screen</b> for ${aspect === 'portrait' ? '4:3' : 'portrait'}.)`);
-  if (aspect === 'classic' && isPortraitViewport()) hint('On a phone? Type <b>screen</b> for a taller portrait display.');
+  hint(`Type a number and press Enter. (Also: <b>sound</b> for the PC speaker${soundOn ? '' : ' (off)'}, <b>palette</b> for ${theme === 'ega' ? 'the tuned' : 'true-EGA'} colours.)`);
   $('cmd').focus();
 }
 
@@ -1297,8 +1287,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   theme = loadTheme();
   applyTheme();
-  aspect = loadAspect();
-  applyAspect();
   soundOn = loadSound();
 
   form.addEventListener('submit', (e) => {

@@ -70,6 +70,32 @@ body[data-theme="ega"] #screen * { text-shadow: none; }
 
 * { box-sizing: border-box; }
 
+/* ---- "rotate your device" guard --------------------------------------------
+   On a small screen held in landscape the 4:3 box + keypad can't fit and the
+   on-screen keyboard covers everything. Cover the game and ask for portrait.
+   Only touch devices; desktops (fine pointer) never see it. */
+#rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  color: var(--phosphor);
+  font-family: var(--mono);
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  line-height: 1.5;
+}
+#rotate .banner { color: var(--paper); font-weight: bold; letter-spacing: 0.12em;
+  font-size: clamp(15px, 5.5vw, 26px); margin: 0 0 14px; }
+#rotate p { margin: 4px 0; font-size: clamp(13px, 4vw, 18px); }
+#rotate .dim { color: var(--phosphor-dim); }
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  #rotate { display: flex; }
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -107,21 +133,6 @@ html, body {
     0 -8px 26px rgba(0,0,0,0.6) inset,
     0 26px 60px rgba(0,0,0,0.75),
     0 0 0 2px #1a1a16;
-}
-
-/* ---- optional PORTRAIT mode (opt-in via the "screen" command) ------------
-   A tall 9:16 EGA screen that fills a phone. On a width-bound phone the box
-   keeps the same width (so text stays the same size) and simply grows taller —
-   the extra height flows straight into the scrolling log. The vh cap keeps it
-   from overflowing shorter screens (and makes a sensible tall box on desktop). */
-body[data-aspect="portrait"] #monitor,
-body[data-aspect="portrait"] #keypad {
-  aspect-ratio: 9 / 16;
-  width: min(96vw, 47vh);
-  max-width: 520px;
-}
-body[data-aspect="portrait"] #keypad {
-  aspect-ratio: auto;                   /* keypad keeps its natural height */
 }
 
 #crt {

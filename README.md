@@ -23,10 +23,10 @@ whistle, dusk/dawn cues, and win/lose jingles. It unlocks on your first
 keypress (browser autoplay rules) and remembers your choice; type **`sound`**
 to toggle it.
 
-**Screen shape.** The default is the period-correct **4:3 EGA** display. On a
-phone, type **`screen`** for an optional **portrait** mode — a tall 9:16 EGA
-screen that fills the device, turning the extra height into more visible log.
-The choice is remembered, and the title screen suggests it on portrait phones.
+**Screen.** The display is a period-correct **4:3 EGA** monitor that scales to
+fit any viewport. On a phone held in landscape (where the box can't fit) a
+"rotate to portrait" guard covers the game and asks you to turn the device
+upright.
 
 ```
 look (l) · examine <thing>      study your surroundings, or an item
