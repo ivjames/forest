@@ -115,8 +115,15 @@ html, body {
   justify-content: center;
   gap: clamp(8px, 1.6vh, 18px);
   padding: clamp(6px, 2vmin, 22px);
+  overflow-y: auto;                       /* if the keyboard shrinks things, scroll rather than clip */
   background:
     radial-gradient(120% 90% at 50% 30%, #14170f 0%, #0a0b07 55%, #000 100%);
+}
+
+/* Touch devices: anchor the screen to the top so the on-screen keyboard just
+   covers the bottom instead of shoving a vertically-centred box around. */
+@media (pointer: coarse) {
+  #desk { justify-content: flex-start; }
 }
 
 /* ---- monitor bezel around an EGA-proportioned (4:3) screen --------------- */
