@@ -26,7 +26,7 @@ drink · fill canteen            water — stand on a stream (~)
 eat · forage · fish             food — rations, berry patches (%), or fishing at water
 make fire                       warmth, a bear-ward, and a rescue signal
 use binoculars · blow whistle · use flare · bandage
-rest · legend · sound · restart · menu
+rest · legend · sound · palette · restart · menu
 ```
 
 ### The systems
@@ -71,10 +71,17 @@ lantern, and fishing line.
 
 ## Colour & accessibility
 
-The palette is *EGA-adjacent*, not the exact EGA hardware colours: it draws from
-the same high-intensity EGA hue families (light green, light red, light cyan,
-light magenta, yellow, white) but tuned brighter/softer for a phosphor-CRT glow
-and for contrast. The "EGA 640×350" nameplate is period flavour.
+The default palette is *EGA-adjacent*, not the exact EGA hardware colours: it
+draws from the same high-intensity EGA hue families (light green, light red,
+light cyan, light magenta, yellow, white) but tuned brighter/softer for a
+phosphor-CRT glow and for contrast. The "EGA 640×350" nameplate is period flavour.
+
+Type **`palette`** (on the title screen or in-game) to switch to a **true-EGA
+mode**: the exact 16-colour hardware values on black, with the phosphor glow
+turned off — authentic, if lower-contrast. The choice is remembered. To stay
+usable it uses the high-intensity half of the palette, so glyph/text colours
+still land ≥4:1 on black (most ≥6.7); only the dark-grey dividers dip below,
+which is the inherent cost of the real hardware colours.
 
 All text and map-glyph colours meet **WCAG 2.1 AA** contrast (≥4.5:1) against the
 screen background — most clear AAA (≥7:1); only the decorative dividers sit lower

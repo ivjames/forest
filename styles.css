@@ -18,6 +18,41 @@
   --mono: "Courier New", "DejaVu Sans Mono", "Liberation Mono", monospace;
 }
 
+/* -----------------------------------------------------------------------------
+   TRUE-EGA palette (opt-in via the "palette" command). The exact 16-colour EGA
+   hardware values on black, no phosphor bloom. Authentic, and mostly legible:
+   glyph/text colours land >=4:1 on black (most >=6.7) by using the high-
+   intensity half of the palette; only the dark-grey dividers (decorative,
+   exempt) fall below 3:1 — the inherent cost of the real hardware colours.
+   -------------------------------------------------------------------------- */
+body[data-theme="ega"] {
+  --phosphor: #55FF55;       /* light green  15.8:1 */
+  --phosphor-dim: #00AA00;   /* green         6.8:1 */
+  --phosphor-faint: #555555; /* dark gray     2.8:1  (dividers only, decorative) */
+  --trail: #00AA00;          /* green         6.8:1 */
+  --paper: #FFFFFF;          /* white        21.0:1 */
+  --amber: #FFFF55;          /* yellow       19.7:1 */
+  --danger: #FF5555;         /* light red     6.7:1 */
+  --water: #55FFFF;          /* light cyan   17.1:1 */
+  --berry: #FF55FF;          /* light magenta 8.0:1 */
+  --sky-night: #5555FF;      /* light blue    4.1:1 */
+  --hill: #AA5500;           /* brown         4.0:1 */
+  --clearing: #55FF55;       /* light green  15.8:1 */
+  --cave: #AAAAAA;           /* light gray    9.0:1 */
+  --ravine: #FF5555;         /* light red     6.7:1 */
+  --fire: #FFFF55;           /* yellow       19.7:1 */
+  --glow: 0 0 0 transparent; /* EGA had no phosphor bloom */
+}
+body[data-theme="ega"] #crt {
+  background: #000;
+}
+body[data-theme="ega"] #desk {
+  background: radial-gradient(120% 90% at 50% 30%, #111 0%, #060606 55%, #000 100%);
+}
+/* flatten every glow in EGA mode (beats the per-class coloured text-shadows) */
+body[data-theme="ega"] #screen,
+body[data-theme="ega"] #screen * { text-shadow: none; }
+
 * { box-sizing: border-box; }
 
 html, body {
