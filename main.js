@@ -251,7 +251,7 @@ function renderMap() {
       if (known) { const t = terrainAt(x, y); glyph = TERRAIN[t].glyph; cls = TERRAIN[t].cls; }
       if (known && S.loot.has(k)) { glyph = ITEMS[S.loot.get(k)].glyph; cls = 'loot'; }
       if (S.stationKnown && x === S.station.x && y === S.station.y) { glyph = 'R'; cls = 'station'; }
-      if (fireOn() && k === S.fireCell) { glyph = 'ф'; cls = 'fire'; }
+      if (fireOn() && k === S.fireCell) { glyph = 'φ'; cls = 'fire'; }
       if (S.turn <= S.bearGlyphUntil && x === S.bear.x && y === S.bear.y) { glyph = 'B'; cls = 'bear'; }
       if (x === S.player.x && y === S.player.y) { glyph = '@'; cls = 'me'; }
       row += `<span class="${cls}">${glyph}</span> `;

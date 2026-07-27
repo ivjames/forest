@@ -107,6 +107,10 @@ Plain static site — the lab980 house shape, no build step:
 - `index.html` — the monitor/bezel + EGA-proportioned screen (HUD, log, prompt, keypad)
 - `styles.css` — the CRT / green-phosphor theme, sized as a 4:3 EGA display
 - `main.js` — the whole game: world generation, turn engine, bear AI, parser, save/score
+- `fonts/` — the bundled **Px437 IBM VGA** text-mode font (the real DOS
+  letterforms), served locally so there are no external requests. It's from
+  VileR's *Ultimate Oldschool PC Font Pack* (CC BY-SA 4.0); see
+  `fonts/NOTICE.txt` for attribution and the small cmap tweaks made.
 
 ## Deploying (lab980 droplet)
 

@@ -1,0 +1,23 @@
+Bundled font: "Px437 IBM VGA 8x16"
+==================================
+
+From "The Ultimate Oldschool PC Font Pack" by VileR (int10h.org) — faithful
+remakes of the text-mode / BIOS fonts of DOS-era IBM PCs and compatibles.
+
+  Author:  VileR
+  Source:  https://int10h.org/oldschool-pc-fonts/
+  License: Creative Commons Attribution-ShareAlike 4.0 International
+           (CC BY-SA 4.0) — https://creativecommons.org/licenses/by-sa/4.0/
+
+Files here (Px437_IBM_VGA_8x16.woff2 / .woff) are provided under the same
+CC BY-SA 4.0 license.
+
+Modifications made for this project:
+  - Converted the original TrueType (.ttf) to WOFF2 and WOFF for the web.
+  - Added a handful of cmap aliases so a few Unicode characters used by the
+    game fall back to fitting CP437 glyphs already in the font:
+      U+2014/U+2015 (em dash / horizontal bar) -> box-drawing horizontal line
+      U+2013 (en dash)        -> hyphen
+      U+2605 (black star)     -> CP437 "sun"   (win banner)
+      U+2620 (skull)          -> CP437 filled square (game-over banner)
+      U+2019/U+201C/U+201D    -> straight quotes
