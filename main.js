@@ -118,7 +118,7 @@ function weightedWeather() {
 let S = null;                 // game state
 let MODE = 'boot';            // boot | menu | play | over
 let soundOn = false;
-let theme = 'phosphor';       // 'phosphor' (default) | 'ega'
+let theme = 'ega';            // 'ega' (default) | 'phosphor'
 let aspect = 'classic';       // 'classic' 4:3 (default) | 'portrait' 9:16
 
 const SAVE_KEY = 'forest.save.v2';
@@ -1126,7 +1126,7 @@ function toggleSound() {
   else say('PC speaker OFF.');
 }
 
-function loadTheme() { try { return localStorage.getItem(THEME_KEY) === 'ega' ? 'ega' : 'phosphor'; } catch (_) { return 'phosphor'; } }
+function loadTheme() { try { return localStorage.getItem(THEME_KEY) === 'phosphor' ? 'phosphor' : 'ega'; } catch (_) { return 'ega'; } }
 function applyTheme() { document.body.dataset.theme = theme; }
 
 function loadAspect() { try { return localStorage.getItem(ASPECT_KEY) === 'portrait' ? 'portrait' : 'classic'; } catch (_) { return 'classic'; } }

@@ -282,10 +282,21 @@ body[data-mode="menu"] #keypad { visibility: hidden; }
   outline: none;
   color: var(--phosphor);
   font: inherit;
+  /* never below 16px: iOS auto-zooms when focusing a smaller input */
+  font-size: max(16px, 1em);
   text-shadow: var(--glow);
   caret-color: var(--phosphor);
 }
 #cmd::placeholder { color: var(--phosphor-faint); }
+
+/* Small screens: raise the base size so the terminal is legible on phones
+   (and the >=16px input above doesn't tower over tiny body text). #crt is a
+   size container, so this keys off the actual screen width. */
+@container (max-width: 480px) {
+  #screen { font-size: max(14px, 3.2cqw); }
+  #map    { font-size: max(14px, 3.6cqw); letter-spacing: 0.05em; }
+  #panel  { font-size: max(11px, 2.7cqw); }
+}
 
 /* ---- on-screen keypad ---------------------------------------------------- */
 #keypad {
