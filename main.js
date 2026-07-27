@@ -1283,18 +1283,25 @@ window.addEventListener('DOMContentLoaded', () => {
   applyTheme();
   soundOn = loadSound();
 
-  // Track the visible viewport so the screen sits above the on-screen keyboard
-  // instead of sliding under it. Sets --vh (visible height) and body.kbd.
+  // Pin the screen to the *visible* viewport. On iOS the keyboard scrolls the
+  // whole (fixed) page up on focus; we counter that by resizing #desk to the
+  // visible height AND translating it down by the visual-viewport offset, so
+  // the box always fills exactly the area above the keyboard.
   const vv = window.visualViewport;
+  const desk = $('desk');
   function fitViewport() {
-    const h = vv ? vv.height : window.innerHeight;
-    document.documentElement.style.setProperty('--vh', h + 'px');
-    document.body.classList.toggle('kbd', vv ? (window.innerHeight - h > 120) : false);
+    if (!vv) return;                       // fallback: CSS 100dvh
+    desk.style.height = vv.height + 'px';
+    desk.style.transform = `translateY(${vv.offsetTop}px)`;
+    document.body.classList.toggle('kbd', (window.innerHeight - vv.height) > 120);
     const log = $('log'); if (log) log.scrollTop = log.scrollHeight;
   }
   if (vv) { vv.addEventListener('resize', fitViewport); vv.addEventListener('scroll', fitViewport); }
   window.addEventListener('resize', fitViewport);
   window.addEventListener('orientationchange', () => setTimeout(fitViewport, 100));
+  // iOS sometimes settles the keyboard a beat after focus; re-fit then.
+  $('cmd').addEventListener('focus', () => { fitViewport(); setTimeout(fitViewport, 250); });
+  $('cmd').addEventListener('blur', () => setTimeout(fitViewport, 100));
   fitViewport();
 
   form.addEventListener('submit', (e) => {

@@ -111,9 +111,9 @@ html, body {
   top: 0;
   left: 0;
   right: 0;
-  /* --vh tracks the *visible* viewport (above the keyboard) via JS; falls back
-     to the dynamic viewport height. This keeps the input above the keyboard. */
-  height: var(--vh, 100dvh);
+  /* JS sizes this to the visible viewport (above the keyboard) and translates
+     it to follow visualViewport.offsetTop; 100dvh is the pre-JS fallback. */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
