@@ -1,0 +1,168 @@
+/* LOST IN THE FOREST — green phosphor CRT terminal
+   Plain static CSS, no build step (lab980 convention). */
+
+:root {
+  --bg: #050a05;
+  --phosphor: #33ff66;
+  --phosphor-dim: #1f9c3f;
+  --phosphor-faint: #12622a;
+  --amber: #ffcf4d;    /* warnings / the bear */
+  --danger: #ff5b4d;   /* death / low health */
+  --paper: #baffcc;    /* brightest — headings, the ranger station */
+  --glow: 0 0 4px rgba(51, 255, 102, 0.55);
+  --mono: "Courier New", "DejaVu Sans Mono", "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  color: var(--phosphor);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+/* CRT shell: subtle bulge + vignette */
+#crt {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, #0a140a 0%, #050a05 60%, #010301 100%);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#scanlines {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.28) 3px
+  );
+  mix-blend-mode: multiply;
+  animation: flicker 5s infinite steps(60);
+}
+@keyframes flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.82; }
+  98% { opacity: 0.95; }
+}
+
+#screen {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: clamp(10px, 2.5vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-shadow: var(--glow);
+}
+
+/* ---- HUD: map + status panel ---- */
+#hud {
+  display: flex;
+  gap: clamp(14px, 4vw, 40px);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--phosphor-faint);
+  padding-bottom: 10px;
+}
+
+#map {
+  margin: 0;
+  font-size: clamp(13px, 2.4vw, 18px);
+  line-height: 1.25;
+  letter-spacing: 0.15em;
+  white-space: pre;
+}
+
+#panel {
+  flex: 1 1 200px;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#stats, #pack {
+  margin: 0;
+  font-size: clamp(12px, 2vw, 15px);
+  white-space: pre-wrap;
+}
+
+/* colour classes shared by map glyphs and log text */
+.me       { color: var(--paper); font-weight: bold; text-shadow: 0 0 6px var(--paper); }
+.station  { color: var(--paper); font-weight: bold; text-shadow: 0 0 6px var(--paper); }
+.bear     { color: var(--amber); font-weight: bold; text-shadow: 0 0 6px var(--amber); }
+.loot     { color: var(--amber); }
+.water    { color: #4dd2ff; text-shadow: 0 0 5px rgba(77, 210, 255, 0.6); }
+.tree     { color: var(--phosphor-dim); }
+.seen     { color: var(--phosphor-faint); }
+
+.warn     { color: var(--amber); }
+.bad      { color: var(--danger); text-shadow: 0 0 6px rgba(255, 91, 77, 0.6); }
+.good     { color: var(--paper); }
+.dim      { color: var(--phosphor-dim); }
+.hint     { color: var(--phosphor-dim); font-style: italic; }
+
+/* ---- scrolling narrative log ---- */
+#log {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--phosphor-faint) transparent;
+}
+#log::-webkit-scrollbar { width: 8px; }
+#log::-webkit-scrollbar-thumb { background: var(--phosphor-faint); border-radius: 4px; }
+
+#log p { margin: 0 0 0.55em; }
+#log .echo { color: var(--phosphor-dim); }        /* the command you typed */
+#log .banner { color: var(--paper); font-weight: bold; }
+#log hr {
+  border: none;
+  border-top: 1px dashed var(--phosphor-faint);
+  margin: 0.7em 0;
+}
+
+/* ---- input line ---- */
+#prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--phosphor-faint);
+  padding-top: 10px;
+}
+.caret { color: var(--paper); }
+#cmd {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--phosphor);
+  font: inherit;
+  text-shadow: var(--glow);
+  caret-color: var(--phosphor);
+}
+#cmd::placeholder { color: var(--phosphor-faint); }
+
+@media (max-width: 560px) {
+  #hud { gap: 12px; }
+  #map { letter-spacing: 0.12em; }
+  #panel { flex-basis: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #scanlines { animation: none; }
+}

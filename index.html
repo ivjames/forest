@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LOST IN THE FOREST</title>
+  <meta name="description" content="A DOS-era text adventure. You are lost in a 10x10 forest. Find the ranger station before the wilderness — or the bear — finds you." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%F0%9F%8C%B2%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="crt">
+    <div id="scanlines" aria-hidden="true"></div>
+    <main id="screen">
+      <header id="hud">
+        <pre id="map" aria-label="forest map"></pre>
+        <div id="panel">
+          <pre id="stats"></pre>
+          <pre id="pack"></pre>
+        </div>
+      </header>
+
+      <section id="log" aria-live="polite" tabindex="0"></section>
+
+      <form id="prompt" autocomplete="off">
+        <span class="caret">&gt;</span>
+        <input
+          id="cmd"
+          name="cmd"
+          type="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          aria-label="command"
+          maxlength="60"
+        />
+      </form>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
