@@ -3,11 +3,38 @@
 // window: fullscreen by default (F11 / Alt+Enter to toggle), no menu bar, no
 // navigation, no network. Saves live in localStorage, which Electron persists
 // under the OS user-data directory.
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 
 // One instance — Steam relaunches focus the existing window instead.
 if (!app.requestSingleInstanceLock()) app.quit();
+
+// Steamworks: required for the overlay to hook Electron's compositor.
+// If rendering ever misbehaves on odd hardware, these two lines are the
+// first thing to suspect.
+app.commandLine.appendSwitch('in-process-gpu');
+app.commandLine.appendSwitch('disable-direct-composition');
+
+// Steam client bindings. Outside Steam (dev runs, the web build's tests)
+// init throws and everything degrades to a plain window — by design.
+let steam = null;
+try {
+  const steamworks = require('steamworks.js');
+  steam = steamworks.init();                    // appid comes from the Steam launch (or steam_appid.txt in dev)
+  try { steamworks.electronEnableSteamOverlay(); } catch (_) {}
+} catch (_) { steam = null; }
+
+// The only achievement ids the renderer may unlock — must match both the
+// ach() calls in the game and the API names registered in Steamworks.
+const ACHIEVEMENTS = new Set([
+  'ACH_RESCUED', 'ACH_DAY_HIKE', 'ACH_BACKCOUNTRY', 'ACH_SURVIVALIST',
+  'ACH_BEAR_AWARE', 'ACH_FIRESTARTER', 'ACH_PACK_RAT',
+]);
+ipcMain.on('ach:unlock', (_e, id) => {
+  if (!steam || !ACHIEVEMENTS.has(id)) return;
+  try { steam.achievement.activate(id); } catch (_) {}
+});
+ipcMain.on('app:quit', () => app.quit());
 
 let win = null;
 
@@ -22,6 +49,7 @@ function createWindow() {
     autoHideMenuBar: true,
     title: "Lost in the Forest '88",
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,

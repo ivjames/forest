@@ -145,12 +145,26 @@ repo already.
 
 ## Optional polish (not needed to ship)
 
-- **Steam overlay / achievements**: needs the Steamworks SDK bridged into
-  Electron ([steamworks.js](https://github.com/ceifa/steamworks.js) is the
-  maintained binding). Achievements are a real wishlist/visibility boost;
-  natural fits: *Rescued* (win), *Day Hiker / Backcountry / Survivalist* (win
-  per difficulty), *Pack Rat* (all 15 items), *Bear Aware* (survive a bear
-  encounter), *Firestarter* (signal fire rescue).
+- **Achievements — already wired.** The desktop shell bridges
+  [steamworks.js](https://github.com/ceifa/steamworks.js) (with the Steam
+  overlay enabled), and the game fires these unlocks. Register each API name
+  in Steamworks → your app → **Achievements** before shipping the build:
+
+  | API name | Display name suggestion | Earned by |
+  |---|---|---|
+  | `ACH_RESCUED` | Rescued | Winning any run |
+  | `ACH_DAY_HIKE` | Day Hiker | Winning on Day Hike |
+  | `ACH_BACKCOUNTRY` | Backcountry | Winning on Backcountry |
+  | `ACH_SURVIVALIST` | Survivalist | Winning on Survivalist |
+  | `ACH_BEAR_AWARE` | Bear Aware | Winning a run in which the bear reached you |
+  | `ACH_FIRESTARTER` | Firestarter | Being rescued via your signal fire's smoke |
+  | `ACH_PACK_RAT` | Pack Rat | Holding every piece of gear at once |
+
+  Off Steam (the web version, dev runs) the hooks no-op silently. To test in
+  dev, drop a `steam_appid.txt` containing your App ID next to the packaged
+  executable and launch while the Steam client is running.
+- **Quit**: the desktop build has a real `quit` command (and pad verb) that
+  closes the window; on the web it returns to the title screen.
 - **Steam Deck**: the controller verb bar (d-pad moves, A opens a SCUMM-style
   verb strip, X/Y/RB hit look/climb/take) makes the game completable pad-only,
   which is the main Deck requirement — "Playable" should be safe and

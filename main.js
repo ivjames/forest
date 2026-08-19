@@ -541,6 +541,7 @@ function tryMoveBear(step) {
 function bearEncounter() {
   const P = S.player;
   S.bearGlyphUntil = S.turn + 1;
+  S.bearMet = true;                 // an encounter survived counts at the win
   sfx('bear');
 
   if (S.fireCell === key(P.x, P.y) && S.turn <= S.fireUntil) {
@@ -652,7 +653,17 @@ function saveBest(diff, score) {
   return false;
 }
 
+// Steam achievements. On the desktop build the Electron preload exposes
+// window.desktop.unlock; on the web this is a silent no-op. IDs must match
+// the API names registered in Steamworks (see STEAM.md).
+function ach(id) { try { window.desktop?.unlock?.(id); } catch (_) {} }
+
 function endGame(win, reason) {
+  if (win) {
+    ach('ACH_RESCUED');
+    ach({ easy: 'ACH_DAY_HIKE', normal: 'ACH_BACKCOUNTRY', hard: 'ACH_SURVIVALIST' }[S.diff]);
+    if (S.bearMet) ach('ACH_BEAR_AWARE');
+  }
   S.over = true; S.won = win; S.ending = reason;
   S.score = scoreRun(win);
   S.stationKnown = true; if (!win) S.bearGlyphUntil = S.turn;
@@ -786,6 +797,7 @@ function cmdTake(rest) {
   S.loot.delete(k);
   S.inventory[id] = (S.inventory[id] || 0) + 1;
   good(`You take the ${ITEMS[id].name}.`);
+  if (Object.keys(ITEMS).every((k) => S.inventory[k] > 0)) ach('ACH_PACK_RAT');
   sfx('take');
   if (id === 'map') { for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the lay of the land, though the station itself isn\'t marked. You\'ll have to spot it.'); }
   if (id === 'canteen' && S.canteenWater === 0) hint('Stand on water and <b>fill canteen</b> to carry drinks.');
@@ -945,7 +957,7 @@ function cmdFire() {
   const seen = sd <= 2 || (t === 'clearing' && sd <= 4);
   if (seen) good('A shout answers from the trees. Someone at the station has seen your smoke!');
   advanceTurn();
-  if (!S.over && seen) win('Boots crash toward you through the brush. A ranger, following your smoke. You\'re saved.');
+  if (!S.over && seen) { ach('ACH_FIRESTARTER'); win('Boots crash toward you through the brush. A ranger, following your smoke. You\'re saved.'); }
 }
 
 function cmdWhistle() {
@@ -1025,6 +1037,7 @@ function serialize() {
     inventory: S.inventory, canteenWater: S.canteenWater, stationKnown: S.stationKnown,
     stats: S.stats, turn: S.turn, weather: S.weather, weatherUntil: S.weatherUntil,
     fireCell: S.fireCell, fireUntil: S.fireUntil, ankle: S.ankle,
+    bearMet: S.bearMet,
   }));
   o.terrain = [...S.terrain.entries()];
   o.loot = [...S.loot.entries()];
@@ -1064,6 +1077,7 @@ function handleMenu(input) {
   if (/^(sound|mute|audio)/.test(input)) { toggleSound(); return; }
   if (/^(palette|ega|theme|colou?rs)/.test(input)) { toggleTheme(); return; }
   if (/^(help|\?|controls)/.test(input)) { menuHelp(); return; }
+  if (/^(quit|exit)/.test(input)) { cmdQuit(); return; }
   say('Type <b>1</b>, <b>2</b>, or <b>3</b> to choose a difficulty' + (hasSave() ? ', or <b>continue</b> your saved run.' : '.'));
 }
 
@@ -1080,6 +1094,7 @@ function handle(raw) {
   if (MODE === 'over') {
     if (/^(restart|again|new)/.test(input)) return beginGame(S.diff);
     if (/^(menu|title)/.test(input)) return showMenu();
+    if (/^(quit|exit)/.test(input)) return cmdQuit();
     if (/^(sound|mute)/.test(input)) return toggleSound();
     if (/^(palette|ega|theme|colou?rs)/.test(input)) return toggleTheme();
     hint('The game is over. Type <b>restart</b> to play again, or <b>menu</b> to change difficulty.');
@@ -1132,7 +1147,8 @@ function handle(raw) {
     case 'sound': case 'mute': case 'audio': toggleSound(); break;
     case 'palette': case 'ega': case 'theme': case 'colors': case 'colours': toggleTheme(); break;
     case 'help': case '?': case 'commands': cmdHelp(); break;
-    case 'menu': case 'title': case 'quit': showMenu(); return;
+    case 'menu': case 'title': showMenu(); return;
+    case 'quit': case 'exit': cmdQuit(); return;
     case 'restart': case 'new': beginGame(S.diff); return;
     default: hint(`You\'re not sure how to "${escapeHtml(verb)}". Type <b>help</b> for what you can do.`);
   }
@@ -1217,6 +1233,18 @@ function boot() {
     ['', ''],
   ];
   typeLines(lines, 260, showMenu);
+}
+
+// Quit: a real power-off on the desktop build (the Electron preload exposes
+// window.desktop.quit); on the web there's no window to close, so it falls
+// back to the title screen. Progress is autosaved every turn either way.
+function cmdQuit() {
+  if (window.desktop?.quit) {
+    print('POWER OFF', 'banner');
+    setTimeout(() => { try { window.desktop.quit(); } catch (_) {} }, 350);
+  } else {
+    showMenu();
+  }
 }
 
 function menuHelp() {
@@ -1371,7 +1399,12 @@ window.addEventListener('DOMContentLoaded', () => {
     return bar;
   }
 
-  function verbs() { return VERBS[MODE] || null; }
+  function verbs() {
+    const v = VERBS[MODE] || null;
+    // Desktop build only: QUIT closes the window; the web has nothing to close.
+    if (v && window.desktop?.quit && !v.some(([l]) => l === 'QUIT')) v.push(['QUIT', 'quit']);
+    return v;
+  }
 
   function renderBar() {
     const v = verbs();

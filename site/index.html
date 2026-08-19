@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LOST IN THE FOREST '88 — a survival text adventure</title>
+  <meta name="description" content="A DOS-era survival text adventure on a green-phosphor CRT. Ten by ten cells of forest, a ranger station somewhere in it, and a bear that hunts by smell. Play the demo in your browser." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%F0%9F%8C%B2%3C/text%3E%3C/svg%3E" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="LOST IN THE FOREST '88" />
+  <meta property="og:description" content="A DOS-era survival text adventure. Find the ranger station. Survive. Play the demo free in your browser." />
+  <meta property="og:url" content="https://lostintheforest88.com/" />
+  <meta property="og:image" content="https://lostintheforest88.com/art/header_capsule_920x430.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <style>
+    /* Same period face the game uses, served from the demo's font dir. */
+    @font-face {
+      font-family: "PxIBMVGA";
+      src: url("/play/fonts/Px437_IBM_VGA_8x16.woff2") format("woff2"),
+           url("/play/fonts/Px437_IBM_VGA_8x16.woff") format("woff");
+      font-display: swap;
+    }
+    :root {
+      --phosphor: #3bff74;
+      --dim: #1f9c3f;
+      --faint: #1c7a38;
+      --paper: #d6ffe2;
+      --amber: #ffc24d;
+      --mono: "PxIBMVGA", "Courier New", "DejaVu Sans Mono", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      background: #000;
+      color: var(--phosphor);
+      font-family: var(--mono);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+    a { color: var(--phosphor); }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 80px; }
+
+    header { padding: 64px 0 8px; text-align: center; }
+    .boot { color: var(--dim); font-size: 14px; letter-spacing: .08em; }
+    h1 {
+      font-size: clamp(28px, 6vw, 54px);
+      color: var(--paper);
+      font-weight: normal;
+      letter-spacing: .06em;
+      margin: 18px 0 6px;
+      text-wrap: balance;
+    }
+    .tag { color: var(--phosphor); font-size: clamp(15px, 2.6vw, 20px); }
+
+    .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 34px 0 10px; }
+    .btn {
+      display: inline-block;
+      padding: 12px 26px;
+      border: 2px solid var(--phosphor);
+      color: var(--paper);
+      text-decoration: none;
+      font-size: 18px;
+      letter-spacing: .05em;
+    }
+    .btn:hover, .btn:focus-visible { background: var(--phosphor); color: #000; outline: none; }
+    .btn.soon { border-color: var(--faint); color: var(--dim); cursor: default; }
+    .btn.soon:hover { background: none; color: var(--dim); }
+    .hint { text-align: center; color: var(--dim); font-size: 14px; }
+
+    .shot { margin: 44px 0 0; }
+    .shot img {
+      display: block; width: 100%; height: auto;
+      border: 1px solid var(--faint);
+    }
+    .shot figcaption { color: var(--dim); font-size: 13px; padding-top: 6px; text-align: center; }
+
+    section { margin-top: 56px; }
+    h2 { color: var(--paper); font-weight: normal; font-size: 22px; letter-spacing: .06em; margin-bottom: 14px; }
+    h2::before { content: "> "; color: var(--phosphor); }
+    ul { list-style: none; }
+    ul li { padding: 4px 0 4px 1.4em; position: relative; }
+    ul li::before { content: "*"; position: absolute; left: 0; color: var(--dim); }
+    b { color: var(--paper); font-weight: normal; }
+    .amber { color: var(--amber); }
+    p + p { margin-top: 10px; }
+
+    .shots2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    @media (max-width: 620px) { .shots2 { grid-template-columns: 1fr; } }
+
+    footer {
+      margin-top: 72px; padding-top: 18px;
+      border-top: 1px dashed var(--faint);
+      color: var(--dim); font-size: 13px; text-align: center;
+    }
+    footer a { color: var(--dim); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="boot">LAB980 BIOS v9.80&nbsp;&nbsp;&nbsp;(C) 1988 LAB980 SYSTEMS<br>Loading FOREST.EXE .......</p>
+      <h1>LOST IN THE FOREST '88</h1>
+      <p class="tag">Find the ranger station. Survive.</p>
+      <div class="cta">
+        <a class="btn" href="/play/">► PLAY THE DEMO</a>
+        <!-- When the Steam page is live, replace this span with:
+             <a class="btn" href="https://store.steampowered.com/app/YOUR_APP_ID/">♥ WISHLIST ON STEAM</a> -->
+        <span class="btn soon">STEAM — COMING SOON</span>
+      </div>
+      <p class="hint">Free in your browser. Keyboard or gamepad. Nothing to install.</p>
+    </header>
+
+    <figure class="shot">
+      <a href="/play/"><img src="/shots/screenshot_03_bear_close.png"
+        alt="Gameplay: the ASCII map shows the bear one cell from the player; the log reads 'a low, wet growl. The bear is right on you.'" /></a>
+      <figcaption>Turn 5. It found you first.</figcaption>
+    </figure>
+
+    <section>
+      <h2>IT'S 1988. THE SCREEN HUMS. YOU ARE LOST.</h2>
+      <p>A survival text adventure played the way they used to be — by typing —
+      on a period-correct 4:3 EGA monitor with a 1-bit PC-speaker beeper.
+      A 10&times;10 wilderness, an <b>@</b> that is you, and a ranger station
+      that means rescue.</p>
+    </section>
+
+    <section>
+      <h2>SURVIVE THE SYSTEMS, NOT A STORY</h2>
+      <ul>
+        <li><b>Water is the clock.</b> Thirst falls every turn. Streams, canteen, rain.</li>
+        <li><b>Night is the wall.</b> Eight turns of daylight, then killing cold. Fire, cave, or blanket.</li>
+        <li><b class="amber">The bear hunts by smell.</b> Tracks and a growl are your only warning.</li>
+        <li><b>Weather changes the rules.</b> Fog shortens sight. Rain douses fires. Storms forbid climbing.</li>
+        <li><b>Fourteen pieces of gear</b> buried in the trees, each one a new option.</li>
+        <li><b>Three difficulties.</b> Day Hike is forgiving. Survivalist is not.</li>
+      </ul>
+      <div class="shots2">
+        <a href="/play/"><img style="width:100%;border:1px solid var(--faint)" src="/shots/screenshot_04_stream_map.png" alt="Gameplay: standing in a stream at dawn with the map revealed" /></a>
+        <a href="/play/"><img style="width:100%;border:1px solid var(--faint)" src="/shots/screenshot_05_legend.png" alt="Gameplay: the map legend explaining every glyph" /></a>
+      </div>
+    </section>
+
+    <section>
+      <h2>AUTHENTIC TO THE YEAR</h2>
+      <p>The real <b>Px437 IBM VGA</b> letterforms. A switchable true-EGA
+      16-color hardware palette. Scanlines, phosphor, and an emulated beeper.
+      Every forest generated fresh; every death your fault.</p>
+      <p>Type <b>help</b>. Then type <b>north</b>. <span class="amber">Good luck.</span></p>
+    </section>
+
+    <footer>
+      <p>© lab980 · <a href="/play/">play the demo</a> · coming to Steam as Lost in the Forest '88</p>
+      <p>Font: “Px437 IBM VGA 8x16” by <a href="https://int10h.org/oldschool-pc-fonts/">VileR</a> (CC BY-SA 4.0)</p>
+    </footer>
+  </div>
+</body>
+</html>
