@@ -151,8 +151,11 @@ repo already.
   natural fits: *Rescued* (win), *Day Hiker / Backcountry / Survivalist* (win
   per difficulty), *Pack Rat* (all 15 items), *Bear Aware* (survive a bear
   encounter), *Firestarter* (signal fire rescue).
-- **Steam Deck**: it's a keyboard game; Deck's on-screen keyboard works but a
-  "Playable" (not "Verified") rating is the realistic outcome.
+- **Steam Deck**: the controller verb bar (d-pad moves, A opens a SCUMM-style
+  verb strip, X/Y/RB hit look/climb/take) makes the game completable pad-only,
+  which is the main Deck requirement — "Playable" should be safe and
+  "Verified" is plausible if the text passes Valve's legibility check at
+  1280×800. Typing on the keyboard remains the native mode.
 - **Demo**: the web version *is* the demo — but note Valve doesn't allow the
   store page to link off-site to play it. Keep forest.lab980.com as your own
   marketing channel instead.

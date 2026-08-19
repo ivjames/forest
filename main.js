@@ -1326,3 +1326,157 @@ window.addEventListener('DOMContentLoaded', () => {
 
   idle();
 });
+
+/* ---------------------------------------------------------------------------
+   Controller support — a verb bar in the SCUMM tradition (Maniac Mansion,
+   1987, was verb-driven for exactly this reason). The pad never bypasses the
+   parser: every action types a real command into the prompt and submits it,
+   so the log reads the same whether you play by keyboard or by pad.
+
+   Mapping (standard layout):
+     d-pad / left stick   move n/s/e/w        (in menu/over: opens the bar)
+     A                    open verb bar / confirm selection
+     B                    close the bar
+     X  look    Y  climb    LB  pack    RB  take    Select  legend
+     Start                toggle the verb bar
+   ------------------------------------------------------------------------- */
+(function gamepadSupport() {
+  const VERBS = {
+    play: [
+      ['TAKE', 'take'], ['LOOK', 'look'], ['CLIMB', 'climb'], ['DRINK', 'drink'],
+      ['FILL', 'fill'], ['FORAGE', 'forage'], ['EAT', 'eat'], ['FISH', 'fish'],
+      ['FIRE', 'make fire'], ['REST', 'rest'], ['WHISTLE', 'whistle'],
+      ['FLARE', 'flare'], ['BINOCS', 'binoculars'], ['AID', 'heal'],
+      ['PACK', 'pack'], ['LEGEND', 'legend'], ['HELP', 'help'],
+      ['SOUND', 'sound'], ['PALETTE', 'palette'], ['RESTART', 'restart'], ['MENU', 'menu'],
+    ],
+    menu: [
+      ['DAY HIKE', '1'], ['BACKCOUNTRY', '2'], ['SURVIVALIST', '3'],
+      ['CONTINUE', 'continue'], ['HELP', 'help'], ['SOUND', 'sound'], ['PALETTE', 'palette'],
+    ],
+    over: [['RESTART', 'restart'], ['MENU', 'menu'], ['SOUND', 'sound'], ['PALETTE', 'palette']],
+  };
+
+  let bar = null, barOpen = false, sel = 0, typing = false, announced = false;
+  let prev = [];                       // last frame's button states
+  let stickZone = 0;                   // -1/0/1 per axis edge tracking (packed)
+
+  function ensureBar() {
+    if (bar) return bar;
+    bar = document.createElement('nav');
+    bar.id = 'verbbar';
+    bar.setAttribute('aria-label', 'controller verbs');
+    const form = document.getElementById('prompt');
+    form.parentNode.insertBefore(bar, form);
+    return bar;
+  }
+
+  function verbs() { return VERBS[MODE] || null; }
+
+  function renderBar() {
+    const v = verbs();
+    if (!v) return closeBar();
+    ensureBar().innerHTML = v.map(([label], i) =>
+      `<span class="${i === sel ? 'sel' : ''}">${label}</span>`).join('');
+  }
+
+  function openBar() {
+    if (!verbs()) return;
+    barOpen = true; sel = 0;
+    document.body.classList.add('padbar');
+    renderBar(); sfx('menu');
+  }
+  function closeBar() {
+    barOpen = false;
+    document.body.classList.remove('padbar');
+    if (bar) bar.innerHTML = '';
+  }
+
+  // Type the command for real — through the same input and submit path the
+  // keyboard uses — so echo, history, and sfx all behave identically.
+  function padType(cmd) {
+    if (typing) return;
+    typing = true; closeBar();
+    const input = document.getElementById('cmd');
+    const form = document.getElementById('prompt');
+    input.value = '';
+    const delay = Math.min(18, 260 / cmd.length);
+    let i = 0;
+    (function tick() {
+      if (i < cmd.length) {
+        input.value += cmd[i++]; sfx('type');
+        setTimeout(tick, delay);
+      } else {
+        typing = false;
+        form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    })();
+  }
+
+  function move(dir) { padType(dir); }
+
+  function onPress(b) {
+    if (MODE === 'boot' || typing) return;
+    if (MODE === 'idle') {           // any button = "PRESS ANY KEY TO POWER ON"
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
+      return;
+    }
+    const inPlay = MODE === 'play';
+    if (barOpen) {
+      const v = verbs();
+      if (b === 14) { sel = (sel + v.length - 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 15) { sel = (sel + 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 12) { sel = (sel + v.length - 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 13) { sel = (sel + 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 0) { padType(v[sel][1]); return; }
+      if (b === 1 || b === 9) { closeBar(); return; }
+      return;
+    }
+    switch (b) {
+      case 12: inPlay ? move('n') : openBar(); break;
+      case 13: inPlay ? move('s') : openBar(); break;
+      case 14: inPlay ? move('w') : openBar(); break;
+      case 15: inPlay ? move('e') : openBar(); break;
+      case 0: case 9: openBar(); break;
+      case 2: if (inPlay) padType('look'); else openBar(); break;
+      case 3: if (inPlay) padType('climb'); else openBar(); break;
+      case 4: if (inPlay) padType('pack'); else openBar(); break;
+      case 5: if (inPlay) padType('take'); else openBar(); break;
+      case 8: if (inPlay) padType('legend'); else openBar(); break;
+    }
+  }
+
+  function poll() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let pad = null;
+    for (const p of pads) if (p && p.connected) { pad = p; break; }
+    if (pad) {
+      pad.buttons.forEach((btn, i) => {
+        const down = btn.pressed;
+        if (down && !prev[i]) onPress(i);
+        prev[i] = down;
+      });
+      // Left stick as a d-pad, edge-triggered (recenter between moves so a
+      // held stick can't burn turns).
+      const x = pad.axes[0] || 0, y = pad.axes[1] || 0;
+      const zone = Math.abs(x) > Math.abs(y)
+        ? (x < -0.55 ? 1 : x > 0.55 ? 2 : 0)
+        : (y < -0.55 ? 3 : y > 0.55 ? 4 : 0);
+      if (zone !== stickZone) {
+        stickZone = zone;
+        if (zone) onPress([0, 14, 15, 12, 13][zone]);
+      }
+    }
+    requestAnimationFrame(poll);
+  }
+
+  window.addEventListener('gamepadconnected', () => {
+    if (!announced) {
+      announced = true;
+      print('GAME PORT ................ CONTROLLER DETECTED', 'dim');
+      print('<span class="dim">D-pad moves · <b>A</b> verbs · <b>X</b> look · <b>Y</b> climb · <b>RB</b> take</span>');
+    }
+    requestAnimationFrame(poll);
+  });
+  window.addEventListener('gamepaddisconnected', () => closeBar());
+})();

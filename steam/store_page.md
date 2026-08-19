@@ -55,7 +55,11 @@ Indie
 
 - Single-player: yes
 - Steam Cloud: no (local saves) — can add later
-- Controller support: no (keyboard required)
+- Controller support: yes — full. D-pad moves, face buttons hit the common
+  verbs, and a SCUMM-style verb bar covers every command including the menu,
+  so the game is completable pad-only. (Verify on real hardware before
+  checking Steamworks' "Full Controller Support" box; it's what reviewers
+  test.) Keyboard remains the native way to play.
 - Achievements: no at launch (see STEAM.md for a v1.1 list)
 
 ## Content survey answers (the honest ones)
