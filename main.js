@@ -1226,7 +1226,7 @@ function menuHelp() {
 function showMenu() {
   MODE = 'menu'; bodyMode('menu');
   $log().innerHTML = '';
-  print('L O S T   I N   T H E   F O R E S T', 'banner');
+  print("L O S T   I N   T H E   F O R E S T   '88", 'banner');
   say('<span class="dim">Find the ranger station. Survive.</span>');
   rule();
   say('Choose your ordeal:');
@@ -1251,7 +1251,7 @@ function enterPlay(resumed) {
     rule();
     cmdLook();
   } else {
-    print(`L O S T   I N   T H E   F O R E S T   ·   ${S.cfg.label}`, 'banner');
+    print(`L O S T   I N   T H E   F O R E S T   '88   ·   ${S.cfg.label}`, 'banner');
     say('You come to face-down in the pine duff with no memory of how you got here. Your head throbs. The trees go on in every direction, a wall of green.');
     say('Somewhere out here is a <b>ranger station</b>. Find it before the wilderness wears you down.');
     hint('The panel above is the forest. <span class="me">@</span> is you. Type <b>look</b> to begin, <b>legend</b> for the map key, or <b>help</b> for commands.');

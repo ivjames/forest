@@ -14,7 +14,7 @@
 "AppBuild"
 {
 	"AppID"		"YOUR_APP_ID"
-	"Desc"		"Lost in the Forest v1.0.0"		// shown in the Builds page only
+	"Desc"		"Lost in the Forest '88 v1.0.0"		// shown in the Builds page only
 	"SetLive"	"beta"					// never auto-publish to default
 	"ContentRoot"	"../desktop/out/"
 	"BuildOutput"	"./build_output/"
@@ -26,7 +26,7 @@
 		{
 			"FileMapping"
 			{
-				"LocalPath"	"Lost in the Forest-win32-x64/*"
+				"LocalPath"	"Lost in the Forest '88-win32-x64/*"
 				"DepotPath"	"."
 				"recursive"	"1"
 			}
@@ -37,7 +37,7 @@
 		{
 			"FileMapping"
 			{
-				"LocalPath"	"Lost in the Forest-linux-x64/*"
+				"LocalPath"	"Lost in the Forest '88-linux-x64/*"
 				"DepotPath"	"."
 				"recursive"	"1"
 			}
@@ -48,7 +48,7 @@
 		{
 			"FileMapping"
 			{
-				"LocalPath"	"Lost in the Forest-darwin-universal/*"
+				"LocalPath"	"Lost in the Forest '88-darwin-universal/*"
 				"DepotPath"	"."
 				"recursive"	"1"
 			}

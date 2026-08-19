@@ -1,6 +1,6 @@
 {
   "name": "lost-in-the-forest",
-  "productName": "Lost in the Forest",
+  "productName": "Lost in the Forest '88",
   "version": "1.0.0",
   "description": "A DOS/EGA-era survival text adventure on a green-phosphor CRT.",
   "author": "ivjames",
@@ -10,9 +10,9 @@
   "scripts": {
     "sync": "node sync-game.mjs",
     "start": "npm run sync && electron .",
-    "package:win": "npm run sync && electron-packager . \"Lost in the Forest\" --platform=win32 --arch=x64 --out=out --overwrite --icon=build/icon.ico --ignore=\"^/(out|build|sync-game\\.mjs)($|/)\"",
-    "package:linux": "npm run sync && electron-packager . \"Lost in the Forest\" --platform=linux --arch=x64 --out=out --overwrite --ignore=\"^/(out|build|sync-game\\.mjs)($|/)\"",
-    "package:mac": "npm run sync && electron-packager . \"Lost in the Forest\" --platform=darwin --arch=universal --out=out --overwrite --icon=build/icon.icns --ignore=\"^/(out|build|sync-game\\.mjs)($|/)\"",
+    "package:win": "npm run sync && electron-packager . \"Lost in the Forest '88\" --platform=win32 --arch=x64 --out=out --overwrite --icon=build/icon.ico --ignore=\"^/(out|build|sync-game\\.mjs)($|/)\"",
+    "package:linux": "npm run sync && electron-packager . \"Lost in the Forest '88\" --platform=linux --arch=x64 --out=out --overwrite --ignore=\"^/(out|build|sync-game\\.mjs)($|/)\"",
+    "package:mac": "npm run sync && electron-packager . \"Lost in the Forest '88\" --platform=darwin --arch=universal --out=out --overwrite --icon=build/icon.icns --ignore=\"^/(out|build|sync-game\\.mjs)($|/)\"",
     "package:all": "npm run package:win && npm run package:linux && npm run package:mac"
   },
   "devDependencies": {

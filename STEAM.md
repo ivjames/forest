@@ -1,4 +1,8 @@
-# Releasing Lost in the Forest on Steam
+# Releasing Lost in the Forest '88 on Steam
+
+> Named with the '88 to distinguish it from an unrelated 2017 Steam game
+> called "Lost in the Forest" — and because the BIOS boot screen already
+> says (C) 1988.
 
 Yes — it really is $100. This is the whole path from "I have a browser game"
 to "it's on Steam", with everything this repo already has prepared for you.
@@ -75,9 +79,9 @@ Notes:
    the vdf to whatever you're assigned.
 2. Fill the four ids into `steam/app_build.vdf`.
 3. Under **Installation → General Installation**, add one launch option per OS:
-   - Windows: executable `Lost in the Forest.exe`
-   - Linux: executable `Lost in the Forest`
-   - macOS: executable `Lost in the Forest.app`
+   - Windows: executable `Lost in the Forest '88.exe`
+   - Linux: executable `Lost in the Forest '88`
+   - macOS: executable `Lost in the Forest '88.app`
 4. Install [steamcmd](https://developer.valvesoftware.com/wiki/SteamCMD), then:
 
 ```bash

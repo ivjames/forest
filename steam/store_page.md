@@ -2,7 +2,7 @@
 
 ## Name
 
-Lost in the Forest
+Lost in the Forest '88
 
 ## Short description (≤300 chars)
 
@@ -15,7 +15,7 @@ night. Get out — or don't.
 
 **It's 1988. The screen hums. You are lost.**
 
-*Lost in the Forest* is a survival text adventure played the way they used to
+*Lost in the Forest '88* is a survival text adventure played the way they used to
 be — by typing — rendered on a period-correct 4:3 EGA monitor with an emulated
 1-bit PC-speaker beeper. No mouse. No hand-holding. A 10×10 wilderness, an `@`
 that is you, and a ranger station that means rescue.

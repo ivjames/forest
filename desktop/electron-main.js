@@ -20,7 +20,7 @@ function createWindow() {
     backgroundColor: '#000000',
     fullscreen: !process.argv.includes('--windowed'),
     autoHideMenuBar: true,
-    title: 'Lost in the Forest',
+    title: "Lost in the Forest '88",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
