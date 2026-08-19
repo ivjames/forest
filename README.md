@@ -112,6 +112,13 @@ Plain static site — the lab980 house shape, no build step:
   VileR's *Ultimate Oldschool PC Font Pack* (CC BY-SA 4.0); see
   `fonts/NOTICE.txt` for attribution and the small cmap tweaks made.
 
+## Steam
+
+The game also ships as a desktop app: `desktop/` wraps it in Electron
+(fullscreen, offline, the game untouched) and `steam/` holds the store assets,
+SteamPipe upload script, and store-page copy. **`STEAM.md`** is the complete
+walkthrough from the $100 Steam Direct fee to the release button.
+
 ## Deploying (lab980 droplet)
 
 Served like every other lab980 subdomain — nginx static files behind certbot.
