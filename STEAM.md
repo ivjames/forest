@@ -93,6 +93,44 @@ cd steam
    branch. Install it through the Steam client yourself (App → Properties →
    Betas), make sure it launches, then **promote the build to `default`**.
 
+### Publishing from a headless droplet (no Mac/PC needed)
+
+The whole pipeline runs on a plain Ubuntu droplet over SSH — packaging is
+file copying and steamcmd is a terminal program. From an iPad, SSH in and:
+
+```bash
+# One-time: steamcmd needs 32-bit libs. On Ubuntu:
+sudo dpkg --add-architecture i386
+sudo add-apt-repository -y multiverse && sudo apt update
+sudo apt install -y steamcmd
+# (If apt can't find it, the manual install is a tarball:
+#  mkdir ~/steamcmd && cd ~/steamcmd &&
+#  curl -sqL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar zx
+#  ...then use ~/steamcmd/steamcmd.sh wherever these docs say steamcmd.)
+
+# One-time: clone SEPARATELY from the live site. /var/www/forest is the
+# deployed web root and tracks main — don't build Steam packages in it.
+git clone https://github.com/ivjames/forest.git ~/forest-steam
+cd ~/forest-steam/steam
+./upload.sh <your_steam_account>
+```
+
+Notes for headless use:
+
+- **Steam Guard works over SSH.** The first `steamcmd +login` asks for your
+  password and then the Guard code — read the code from the Steam mobile app
+  (or your email) and type it into the terminal. steamcmd caches the session,
+  so later uploads don't prompt.
+- **Resources:** the three platform builds total ~700 MB in `desktop/out/`;
+  make sure the droplet has a couple of GB free. Node 18+ is required (the
+  droplet already runs Node sites, so likely fine).
+- **Testing without a desktop:** you can't run the Steam client on a droplet
+  or an iPad, so you can't self-install the beta branch. Mitigations, in
+  order of usefulness: the wrapper in this repo was already launch-tested on
+  Linux; Valve's release review runs the game on real machines anyway; and if
+  you want a pre-review sanity check, a friend with any Windows PC can be
+  gifted a beta key from Steamworks in one click.
+
 ## Review & launch
 
 1. With store page + build + pricing done, request the **release review**
