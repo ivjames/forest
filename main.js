@@ -1239,6 +1239,9 @@ function boot() {
 // window.desktop.quit); on the web there's no window to close, so it falls
 // back to the title screen. Progress is autosaved every turn either way.
 function cmdQuit() {
+  // Saves normally happen on turn advance; a quit right after a non-turn
+  // action (take, fill, heal, ...) must not lose it.
+  if (MODE === 'play') autosave();
   if (window.desktop?.quit) {
     print('POWER OFF', 'banner');
     setTimeout(() => { try { window.desktop.quit(); } catch (_) {} }, 350);
@@ -1351,6 +1354,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Keep focus on the prompt when tapping the screen (but allow text selection).
   $('screen').addEventListener('click', () => { if (!window.getSelection().toString()) input.focus(); });
+
+  // Same save-on-exit guarantee for closes that skip the quit command:
+  // Alt+F4 / the window X on desktop, tab close or navigation on the web.
+  window.addEventListener('pagehide', () => { if (MODE === 'play') autosave(); });
 
   idle();
 });
