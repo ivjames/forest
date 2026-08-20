@@ -1395,6 +1395,7 @@ window.addEventListener('DOMContentLoaded', () => {
   let bar = null, barOpen = false, sel = 0, typing = false, announced = false;
   let prev = [];                       // last frame's button states
   let stickZone = 0;                   // -1/0/1 per axis edge tracking (packed)
+  let nintendo = false;                // Switch-style pads report physical A as button 1
 
   function ensureBar() {
     if (bar) return bar;
@@ -1417,7 +1418,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const v = verbs();
     if (!v) return closeBar();
     ensureBar().innerHTML = v.map(([label], i) =>
-      `<span class="${i === sel ? 'sel' : ''}">${label}</span>`).join('');
+      `<span class="${i === sel ? 'sel' : ''}">${label}</span>`).join('')
+      + '<span class="padhint">A·OK&nbsp;&nbsp;B·BACK</span>';
   }
 
   function openBar() {
@@ -1456,6 +1458,9 @@ window.addEventListener('DOMContentLoaded', () => {
   function move(dir) { padType(dir); }
 
   function onPress(b) {
+    // Nintendo-layout pads: physical A/B arrive as standard indices 1/0.
+    // Swap so the button labeled A always confirms and B always cancels.
+    if (nintendo && (b === 0 || b === 1)) b = 1 - b;
     if (MODE === 'boot' || typing) return;
     if (MODE === 'idle') {           // any button = "PRESS ANY KEY TO POWER ON"
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
@@ -1491,6 +1496,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let pad = null;
     for (const p of pads) if (p && p.connected) { pad = p; break; }
     if (pad) {
+      nintendo = /nintendo|switch|joy-?con/i.test(pad.id || '');
       pad.buttons.forEach((btn, i) => {
         const down = btn.pressed;
         if (down && !prev[i]) onPress(i);

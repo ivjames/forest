@@ -374,3 +374,4 @@ body[data-mode="menu"] #log hr { margin: 0.35em 0; }
 body.padbar #verbbar { display: flex; }
 #verbbar span { color: var(--phosphor-dim); padding: 0 0.25em; }
 #verbbar span.sel { background: var(--phosphor); color: #000; }
+#verbbar .padhint { margin-left: auto; color: var(--phosphor-faint); }
