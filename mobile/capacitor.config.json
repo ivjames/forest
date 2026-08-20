@@ -1,0 +1,18 @@
+{
+  "appId": "com.lab980.lostintheforest88",
+  "appName": "Lost in the Forest '88",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "ios": {
+    "contentInset": "never"
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "none"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#000000"
+    }
+  }
+}
