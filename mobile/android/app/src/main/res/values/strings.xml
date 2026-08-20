@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lost in the Forest \'88</string>
+    <string name="title_activity_main">Lost in the Forest \'88</string>
+    <string name="package_name">com.lab980.lostintheforest88</string>
+    <string name="custom_url_scheme">com.lab980.lostintheforest88</string>
+</resources>
