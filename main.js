@@ -118,6 +118,12 @@ function weightedWeather() {
    ------------------------------------------------------------------------- */
 let S = null;                 // game state
 let MODE = 'boot';            // boot | menu | play | over
+
+// The web version is the free demo: Day Hike only. The desktop (Electron
+// preload sets window.desktop) and mobile (Capacitor injects window.Capacitor)
+// builds are the full game. Evaluated lazily — both flags exist before any
+// user input is possible.
+const isDemo = () => !window.desktop && !window.Capacitor;
 let soundOn = false;
 let theme = 'ega';            // 'ega' (default) | 'phosphor'
 
@@ -1069,10 +1075,18 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+function demoPitch(label) {
+  say(`<b>${label}</b> is part of the full game.`);
+  say('<b>LOST IN THE FOREST \'88</b> is coming to Steam — deeper scarcity, a hungrier bear, and the score chase across all three difficulties.');
+  say('<span class="dim">Wishlist it at</span> <a href="https://lostintheforest88.com/" target="_blank" rel="noopener">lostintheforest88.com</a>');
+  hint('Type <b>1</b> to play DAY HIKE — the demo forest is fully yours.');
+  sfx('menu');
+}
+
 function handleMenu(input) {
   if (/^(1|easy|day)/.test(input)) return beginGame('easy');
-  if (/^(2|normal|back)/.test(input)) return beginGame('normal');
-  if (/^(3|hard|surv)/.test(input)) return beginGame('hard');
+  if (/^(2|normal|back)/.test(input)) return isDemo() ? demoPitch('BACKCOUNTRY') : beginGame('normal');
+  if (/^(3|hard|surv)/.test(input)) return isDemo() ? demoPitch('SURVIVALIST') : beginGame('hard');
   if (/^(c|continue|resume)/.test(input) && hasSave()) { if (loadSave()) { MODE = 'play'; enterPlay(true); return; } }
   if (/^(sound|mute|audio)/.test(input)) { toggleSound(); return; }
   if (/^(palette|ega|theme|colou?rs)/.test(input)) { toggleTheme(); return; }
@@ -1262,13 +1276,20 @@ function showMenu() {
   rule();
   say('Choose your ordeal:');
   say('  <b class="good">1</b>  DAY HIKE     <span class="dim">forgiving</span>');
-  say('  <b class="good">2</b>  BACKCOUNTRY  <span class="dim">the standard run</span>');
-  say('  <b class="good">3</b>  SURVIVALIST  <span class="dim">scarce, brutal</span>');
+  if (isDemo()) {
+    say('  <span class="dim">2  BACKCOUNTRY  ▒ full game</span>');
+    say('  <span class="dim">3  SURVIVALIST  ▒ full game</span>');
+  } else {
+    say('  <b class="good">2</b>  BACKCOUNTRY  <span class="dim">the standard run</span>');
+    say('  <b class="good">3</b>  SURVIVALIST  <span class="dim">scarce, brutal</span>');
+  }
   const best = bestScores();
   if (best.easy || best.normal || best.hard)
     say(`<span class="dim">best: ${best.easy || 0} / ${best.normal || 0} / ${best.hard || 0}</span>`);
   if (hasSave()) say('  <b class="good">continue</b>  <span class="dim">resume your run</span>');
-  hint('<b>1</b>-<b>3</b> to start  ·  <b>help</b>  ·  <b>sound</b>  ·  <b>palette</b>');
+  hint(isDemo()
+    ? '<b>1</b> to start  ·  <b>help</b>  ·  <b>sound</b>  ·  <b>palette</b>'
+    : '<b>1</b>-<b>3</b> to start  ·  <b>help</b>  ·  <b>sound</b>  ·  <b>palette</b>');
   $('cmd').focus();
 }
 
