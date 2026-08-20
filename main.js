@@ -541,6 +541,7 @@ function tryMoveBear(step) {
 function bearEncounter() {
   const P = S.player;
   S.bearGlyphUntil = S.turn + 1;
+  S.bearMet = true;                 // an encounter survived counts at the win
   sfx('bear');
 
   if (S.fireCell === key(P.x, P.y) && S.turn <= S.fireUntil) {
@@ -652,7 +653,17 @@ function saveBest(diff, score) {
   return false;
 }
 
+// Steam achievements. On the desktop build the Electron preload exposes
+// window.desktop.unlock; on the web this is a silent no-op. IDs must match
+// the API names registered in Steamworks (see STEAM.md).
+function ach(id) { try { window.desktop?.unlock?.(id); } catch (_) {} }
+
 function endGame(win, reason) {
+  if (win) {
+    ach('ACH_RESCUED');
+    ach({ easy: 'ACH_DAY_HIKE', normal: 'ACH_BACKCOUNTRY', hard: 'ACH_SURVIVALIST' }[S.diff]);
+    if (S.bearMet) ach('ACH_BEAR_AWARE');
+  }
   S.over = true; S.won = win; S.ending = reason;
   S.score = scoreRun(win);
   S.stationKnown = true; if (!win) S.bearGlyphUntil = S.turn;
@@ -786,6 +797,7 @@ function cmdTake(rest) {
   S.loot.delete(k);
   S.inventory[id] = (S.inventory[id] || 0) + 1;
   good(`You take the ${ITEMS[id].name}.`);
+  if (Object.keys(ITEMS).every((k) => S.inventory[k] > 0)) ach('ACH_PACK_RAT');
   sfx('take');
   if (id === 'map') { for (let x=0;x<SIZE;x++) for (let y=0;y<SIZE;y++) S.mapped.add(key(x,y)); hint('The map fills in the lay of the land, though the station itself isn\'t marked. You\'ll have to spot it.'); }
   if (id === 'canteen' && S.canteenWater === 0) hint('Stand on water and <b>fill canteen</b> to carry drinks.');
@@ -945,7 +957,7 @@ function cmdFire() {
   const seen = sd <= 2 || (t === 'clearing' && sd <= 4);
   if (seen) good('A shout answers from the trees. Someone at the station has seen your smoke!');
   advanceTurn();
-  if (!S.over && seen) win('Boots crash toward you through the brush. A ranger, following your smoke. You\'re saved.');
+  if (!S.over && seen) { ach('ACH_FIRESTARTER'); win('Boots crash toward you through the brush. A ranger, following your smoke. You\'re saved.'); }
 }
 
 function cmdWhistle() {
@@ -1025,6 +1037,7 @@ function serialize() {
     inventory: S.inventory, canteenWater: S.canteenWater, stationKnown: S.stationKnown,
     stats: S.stats, turn: S.turn, weather: S.weather, weatherUntil: S.weatherUntil,
     fireCell: S.fireCell, fireUntil: S.fireUntil, ankle: S.ankle,
+    bearMet: S.bearMet,
   }));
   o.terrain = [...S.terrain.entries()];
   o.loot = [...S.loot.entries()];
@@ -1064,6 +1077,7 @@ function handleMenu(input) {
   if (/^(sound|mute|audio)/.test(input)) { toggleSound(); return; }
   if (/^(palette|ega|theme|colou?rs)/.test(input)) { toggleTheme(); return; }
   if (/^(help|\?|controls)/.test(input)) { menuHelp(); return; }
+  if (/^(quit|exit)/.test(input)) { cmdQuit(); return; }
   say('Type <b>1</b>, <b>2</b>, or <b>3</b> to choose a difficulty' + (hasSave() ? ', or <b>continue</b> your saved run.' : '.'));
 }
 
@@ -1080,6 +1094,7 @@ function handle(raw) {
   if (MODE === 'over') {
     if (/^(restart|again|new)/.test(input)) return beginGame(S.diff);
     if (/^(menu|title)/.test(input)) return showMenu();
+    if (/^(quit|exit)/.test(input)) return cmdQuit();
     if (/^(sound|mute)/.test(input)) return toggleSound();
     if (/^(palette|ega|theme|colou?rs)/.test(input)) return toggleTheme();
     hint('The game is over. Type <b>restart</b> to play again, or <b>menu</b> to change difficulty.');
@@ -1132,7 +1147,8 @@ function handle(raw) {
     case 'sound': case 'mute': case 'audio': toggleSound(); break;
     case 'palette': case 'ega': case 'theme': case 'colors': case 'colours': toggleTheme(); break;
     case 'help': case '?': case 'commands': cmdHelp(); break;
-    case 'menu': case 'title': case 'quit': showMenu(); return;
+    case 'menu': case 'title': showMenu(); return;
+    case 'quit': case 'exit': cmdQuit(); return;
     case 'restart': case 'new': beginGame(S.diff); return;
     default: hint(`You\'re not sure how to "${escapeHtml(verb)}". Type <b>help</b> for what you can do.`);
   }
@@ -1219,6 +1235,21 @@ function boot() {
   typeLines(lines, 260, showMenu);
 }
 
+// Quit: a real power-off on the desktop build (the Electron preload exposes
+// window.desktop.quit); on the web there's no window to close, so it falls
+// back to the title screen. Progress is autosaved every turn either way.
+function cmdQuit() {
+  // Saves normally happen on turn advance; a quit right after a non-turn
+  // action (take, fill, heal, ...) must not lose it.
+  if (MODE === 'play') autosave();
+  if (window.desktop?.quit) {
+    print('POWER OFF', 'banner');
+    setTimeout(() => { try { window.desktop.quit(); } catch (_) {} }, 350);
+  } else {
+    showMenu();
+  }
+}
+
 function menuHelp() {
   say('You wander a 10×10 forest looking for the ranger station (R). Move with n/s/e/w, <b>look</b> around, <b>climb</b> for a bearing, and manage thirst, hunger, cold, and a bear. Full commands appear once you\'re playing (type <b>help</b>).');
 }
@@ -1226,7 +1257,7 @@ function menuHelp() {
 function showMenu() {
   MODE = 'menu'; bodyMode('menu');
   $log().innerHTML = '';
-  print('L O S T   I N   T H E   F O R E S T', 'banner');
+  print("L O S T   I N   T H E   F O R E S T   '88", 'banner');
   say('<span class="dim">Find the ranger station. Survive.</span>');
   rule();
   say('Choose your ordeal:');
@@ -1251,7 +1282,7 @@ function enterPlay(resumed) {
     rule();
     cmdLook();
   } else {
-    print(`L O S T   I N   T H E   F O R E S T   ·   ${S.cfg.label}`, 'banner');
+    print(`L O S T   I N   T H E   F O R E S T   '88   ·   ${S.cfg.label}`, 'banner');
     say('You come to face-down in the pine duff with no memory of how you got here. Your head throbs. The trees go on in every direction, a wall of green.');
     say('Somewhere out here is a <b>ranger station</b>. Find it before the wilderness wears you down.');
     hint('The panel above is the forest. <span class="me">@</span> is you. Type <b>look</b> to begin, <b>legend</b> for the map key, or <b>help</b> for commands.');
@@ -1324,5 +1355,174 @@ window.addEventListener('DOMContentLoaded', () => {
   // Keep focus on the prompt when tapping the screen (but allow text selection).
   $('screen').addEventListener('click', () => { if (!window.getSelection().toString()) input.focus(); });
 
+  // Same save-on-exit guarantee for closes that skip the quit command:
+  // Alt+F4 / the window X on desktop, tab close or navigation on the web.
+  window.addEventListener('pagehide', () => { if (MODE === 'play') autosave(); });
+
   idle();
 });
+
+/* ---------------------------------------------------------------------------
+   Controller support — a verb bar in the SCUMM tradition (Maniac Mansion,
+   1987, was verb-driven for exactly this reason). The pad never bypasses the
+   parser: every action types a real command into the prompt and submits it,
+   so the log reads the same whether you play by keyboard or by pad.
+
+   Mapping (standard layout):
+     d-pad / left stick   move n/s/e/w        (in menu/over: opens the bar)
+     A                    open verb bar / confirm selection
+     B                    close the bar
+     X  look    Y  climb    LB  pack    RB  take    Select  legend
+     Start                toggle the verb bar
+   ------------------------------------------------------------------------- */
+(function gamepadSupport() {
+  const VERBS = {
+    play: [
+      ['TAKE', 'take'], ['LOOK', 'look'], ['CLIMB', 'climb'], ['DRINK', 'drink'],
+      ['FILL', 'fill'], ['FORAGE', 'forage'], ['EAT', 'eat'], ['FISH', 'fish'],
+      ['FIRE', 'make fire'], ['REST', 'rest'], ['WHISTLE', 'whistle'],
+      ['FLARE', 'flare'], ['BINOCS', 'binoculars'], ['AID', 'heal'],
+      ['PACK', 'pack'], ['LEGEND', 'legend'], ['HELP', 'help'],
+      ['SOUND', 'sound'], ['PALETTE', 'palette'], ['RESTART', 'restart'], ['MENU', 'menu'],
+    ],
+    menu: [
+      ['DAY HIKE', '1'], ['BACKCOUNTRY', '2'], ['SURVIVALIST', '3'],
+      ['CONTINUE', 'continue'], ['HELP', 'help'], ['SOUND', 'sound'], ['PALETTE', 'palette'],
+    ],
+    over: [['RESTART', 'restart'], ['MENU', 'menu'], ['SOUND', 'sound'], ['PALETTE', 'palette']],
+  };
+
+  let bar = null, barOpen = false, sel = 0, typing = false, announced = false;
+  let prev = [];                       // last frame's button states
+  let stickZone = 0;                   // -1/0/1 per axis edge tracking (packed)
+  let nintendo = false;                // Switch-style pads report physical A as button 1
+
+  function ensureBar() {
+    if (bar) return bar;
+    bar = document.createElement('nav');
+    bar.id = 'verbbar';
+    bar.setAttribute('aria-label', 'controller verbs');
+    const form = document.getElementById('prompt');
+    form.parentNode.insertBefore(bar, form);
+    return bar;
+  }
+
+  function verbs() {
+    const v = VERBS[MODE] || null;
+    // Desktop build only: QUIT closes the window; the web has nothing to close.
+    if (v && window.desktop?.quit && !v.some(([l]) => l === 'QUIT')) v.push(['QUIT', 'quit']);
+    return v;
+  }
+
+  function renderBar() {
+    const v = verbs();
+    if (!v) return closeBar();
+    ensureBar().innerHTML = v.map(([label], i) =>
+      `<span class="${i === sel ? 'sel' : ''}">${label}</span>`).join('')
+      + '<span class="padhint">A·OK&nbsp;&nbsp;B·BACK</span>';
+  }
+
+  function openBar() {
+    if (!verbs()) return;
+    barOpen = true; sel = 0;
+    document.body.classList.add('padbar');
+    renderBar(); sfx('menu');
+  }
+  function closeBar() {
+    barOpen = false;
+    document.body.classList.remove('padbar');
+    if (bar) bar.innerHTML = '';
+  }
+
+  // Type the command for real — through the same input and submit path the
+  // keyboard uses — so echo, history, and sfx all behave identically.
+  function padType(cmd) {
+    if (typing) return;
+    typing = true; closeBar();
+    const input = document.getElementById('cmd');
+    const form = document.getElementById('prompt');
+    input.value = '';
+    const delay = Math.min(18, 260 / cmd.length);
+    let i = 0;
+    (function tick() {
+      if (i < cmd.length) {
+        input.value += cmd[i++]; sfx('type');
+        setTimeout(tick, delay);
+      } else {
+        typing = false;
+        form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    })();
+  }
+
+  function move(dir) { padType(dir); }
+
+  function onPress(b) {
+    // Nintendo-layout pads: physical A/B arrive as standard indices 1/0.
+    // Swap so the button labeled A always confirms and B always cancels.
+    if (nintendo && (b === 0 || b === 1)) b = 1 - b;
+    if (MODE === 'boot' || typing) return;
+    if (MODE === 'idle') {           // any button = "PRESS ANY KEY TO POWER ON"
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
+      return;
+    }
+    const inPlay = MODE === 'play';
+    if (barOpen) {
+      const v = verbs();
+      if (b === 14) { sel = (sel + v.length - 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 15) { sel = (sel + 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 12) { sel = (sel + v.length - 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 13) { sel = (sel + 1) % v.length; renderBar(); sfx('type'); return; }
+      if (b === 0) { padType(v[sel][1]); return; }
+      if (b === 1 || b === 9) { closeBar(); return; }
+      return;
+    }
+    switch (b) {
+      case 12: inPlay ? move('n') : openBar(); break;
+      case 13: inPlay ? move('s') : openBar(); break;
+      case 14: inPlay ? move('w') : openBar(); break;
+      case 15: inPlay ? move('e') : openBar(); break;
+      case 0: case 9: openBar(); break;
+      case 2: if (inPlay) padType('look'); else openBar(); break;
+      case 3: if (inPlay) padType('climb'); else openBar(); break;
+      case 4: if (inPlay) padType('pack'); else openBar(); break;
+      case 5: if (inPlay) padType('take'); else openBar(); break;
+      case 8: if (inPlay) padType('legend'); else openBar(); break;
+    }
+  }
+
+  function poll() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let pad = null;
+    for (const p of pads) if (p && p.connected) { pad = p; break; }
+    if (pad) {
+      nintendo = /nintendo|switch|joy-?con/i.test(pad.id || '');
+      pad.buttons.forEach((btn, i) => {
+        const down = btn.pressed;
+        if (down && !prev[i]) onPress(i);
+        prev[i] = down;
+      });
+      // Left stick as a d-pad, edge-triggered (recenter between moves so a
+      // held stick can't burn turns).
+      const x = pad.axes[0] || 0, y = pad.axes[1] || 0;
+      const zone = Math.abs(x) > Math.abs(y)
+        ? (x < -0.55 ? 1 : x > 0.55 ? 2 : 0)
+        : (y < -0.55 ? 3 : y > 0.55 ? 4 : 0);
+      if (zone !== stickZone) {
+        stickZone = zone;
+        if (zone) onPress([0, 14, 15, 12, 13][zone]);
+      }
+    }
+    requestAnimationFrame(poll);
+  }
+
+  window.addEventListener('gamepadconnected', () => {
+    if (!announced) {
+      announced = true;
+      print('GAME PORT ................ CONTROLLER DETECTED', 'dim');
+      print('<span class="dim">D-pad moves · <b>A</b> verbs · <b>X</b> look · <b>Y</b> climb · <b>RB</b> take</span>');
+    }
+    requestAnimationFrame(poll);
+  });
+  window.addEventListener('gamepaddisconnected', () => closeBar());
+})();

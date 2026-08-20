@@ -1,0 +1,57 @@
+// SteamPipe build script for Lost in the Forest.
+//
+// Fill in the three ID placeholders after Steamworks assigns them:
+//   YOUR_APP_ID          — the app id Valve gives you (Steamworks -> your app)
+//   YOUR_APP_ID + 1/2/3  — depot ids (created under Steamworks -> SteamPipe -> Depots;
+//                          the first depot defaults to appid+1)
+//
+// Run from the steam/ directory after `npm run package:all` in desktop/:
+//   steamcmd +login <account> +run_app_build $(pwd)/app_build.vdf +quit
+//
+// Builds land on the "default" branch unset; this pushes to "beta" first so
+// you can smoke-test in the Steam client, then promote to default in
+// Steamworks -> SteamPipe -> Builds.
+"AppBuild"
+{
+	"AppID"		"YOUR_APP_ID"
+	"Desc"		"Lost in the Forest '88 v1.0.0"		// shown in the Builds page only
+	"SetLive"	"beta"					// never auto-publish to default
+	"ContentRoot"	"../desktop/out/"
+	"BuildOutput"	"./build_output/"
+
+	"Depots"
+	{
+		// Windows
+		"YOUR_WIN_DEPOT_ID"		// usually YOUR_APP_ID + 1
+		{
+			"FileMapping"
+			{
+				"LocalPath"	"Lost in the Forest '88-win32-x64/*"
+				"DepotPath"	"."
+				"recursive"	"1"
+			}
+		}
+
+		// Linux
+		"YOUR_LINUX_DEPOT_ID"		// usually YOUR_APP_ID + 2
+		{
+			"FileMapping"
+			{
+				"LocalPath"	"Lost in the Forest '88-linux-x64/*"
+				"DepotPath"	"."
+				"recursive"	"1"
+			}
+		}
+
+		// macOS
+		"YOUR_MAC_DEPOT_ID"		// usually YOUR_APP_ID + 3
+		{
+			"FileMapping"
+			{
+				"LocalPath"	"Lost in the Forest '88-darwin-universal/*"
+				"DepotPath"	"."
+				"recursive"	"1"
+			}
+		}
+	}
+}
