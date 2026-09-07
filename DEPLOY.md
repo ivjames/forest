@@ -128,6 +128,9 @@ git clone -b main https://github.com/ivjames/forest.git /var/www/lostintheforest
 
 # 2. Install the vhost. Add the dotfile deny first -- see Notes; the tracked
 #    file does not carry one, and a fresh server would serve /.git/config.
+#    Use the negative-lookahead form given there: a bare `location ~ /\.`
+#    also denies /.well-known/acme-challenge and breaks step 3's certbot run
+#    and every renewal after it.
 cp /var/www/lostintheforest88/site/nginx.conf \
    /etc/nginx/sites-available/lostintheforest88.com
 ln -sf /etc/nginx/sites-available/lostintheforest88.com \
@@ -147,15 +150,27 @@ certbot --nginx -d lostintheforest88.com -d www.lostintheforest88.com --redirect
   anything you wouldn't publish.
 - **Dotfile protection is not in the tracked vhost.** `/.git/config`,
   `/play/.git/config` and `/.claude/rules/lab980-conventions.md` all 404 on the
-  live host (verified), but `site/nginx.conf` contains no deny rule — that 404
-  comes from configuration outside this repo, and the responses carry security
-  headers the 200s don't, so something at server level is handling it. **A
-  server provisioned from the section above would serve them.** Add this to the
-  vhost before installing it anywhere:
+  live host (verified), but `site/nginx.conf` contains no deny rule. That 404
+  comes from the installed vhost, which the lab980 repo's `bin/fix-dotgit`
+  swept across every vhost on the box — not from anything here. **A server
+  provisioned from the section above would serve them.** Add the platform's own
+  form to the vhost before installing it anywhere:
 
   ```nginx
-  location ~ /\. { deny all; }
+  location ~ /\.(?!well-known) { deny all; return 404; }
   ```
+
+  **Use that form, not `location ~ /\. { deny all; }`.** This file recommended
+  the bare version until now, and it would have broken TLS renewal on this host:
+  it also denies `/.well-known/acme-challenge/`, which is where certbot's
+  HTTP-01 challenge is served, and `site/nginx.conf` has no `^~ /.well-known/`
+  location to outrank it. (`highlander` has both — the negative lookahead *and*
+  a prefix location — which is why the bare form is harmless there and not
+  here.) `bin/fix-dotgit` in `ivjames/lab980.com` says the same in its own
+  comment: "Deny every dotfile path, but NOT `/.well-known`: certbot's ACME
+  challenge lives there and blocking it would break certificate renewal across
+  the box." Caught by the vhost audit running alongside this one; the matching
+  rule is in #6.
 - **No app port / pm2:** nothing listens on an `806x` port for this site.
 - **`forest.lab980.com`** is what this runbook used to describe. It no longer
   resolves; `site/nginx.conf` was added in `917fe2c` (2026-08-19) and moved the
