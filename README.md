@@ -124,12 +124,13 @@ walkthrough from the $100 Steam Direct fee to the release button.
 
 ## Deploying (lab980 droplet)
 
-Served like every other lab980 subdomain — nginx static files behind certbot.
-From the lab980 repo's `bin/`:
+Live at **https://lostintheforest88.com** — the landing page at `/`, the game
+at `/play/` — served by nginx behind certbot. There's no build step, so the web
+root `/var/www/lostintheforest88` is the git clone itself and a deploy is:
 
 ```bash
-provision-site forest ivjames/forest      # DO DNS + /var/www/forest + nginx + TLS
+cd /var/www/lostintheforest88 && git pull
 ```
 
-No build step, so the web root can be the git clone itself and updates are a
-`git pull`. It ends up at **forest.lab980.com**.
+The checkout has to be on `main` for that to do anything; **`DEPLOY.md`** is
+the full runbook, including how to tell what is actually live.

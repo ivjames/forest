@@ -108,8 +108,8 @@ sudo apt install -y steamcmd
 #  curl -sqL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar zx
 #  ...then use ~/steamcmd/steamcmd.sh wherever these docs say steamcmd.)
 
-# One-time: clone SEPARATELY from the live site. /var/www/forest is the
-# deployed web root and tracks main — don't build Steam packages in it.
+# One-time: clone SEPARATELY from the live site. /var/www/lostintheforest88
+# is the deployed web root and tracks main — don't build Steam packages in it.
 git clone https://github.com/ivjames/forest.git ~/forest-steam
 cd ~/forest-steam/steam
 ./upload.sh <your_steam_account>
@@ -171,8 +171,8 @@ repo already.
   "Verified" is plausible if the text passes Valve's legibility check at
   1280×800. Typing on the keyboard remains the native mode.
 - **Demo**: the web version *is* the demo — but note Valve doesn't allow the
-  store page to link off-site to play it. Keep forest.lab980.com as your own
-  marketing channel instead.
+  store page to link off-site to play it. Keep lostintheforest88.com as your
+  own marketing channel instead.
 
 ## Gotchas that fail review (all already handled here)
 
