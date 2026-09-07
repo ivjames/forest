@@ -44,13 +44,18 @@ the served file against the commit you expect, byte for byte:
 
 ```bash
 # from anywhere with a clone
+git fetch -q origin main
 curl -s https://lostintheforest88.com/play/main.js | git hash-object --stdin
-git rev-parse main:main.js
+git rev-parse origin/main:main.js
 ```
 
 Two identical hashes mean the deploy landed. They are blob hashes of the same
 file, so this works for any tracked file — `index.html`, `styles.css`, a font.
 Do this before saying a change shipped.
+
+Compare against `origin/main`, not local `main`, and fetch first. A stale clone
+and a stale deploy hash identically, so the local-branch version of this check
+passes cheerfully in exactly the case it exists to catch.
 
 ## If `git pull` says "Already up to date" but the site is stale
 
@@ -77,19 +82,37 @@ upstream — so the next bare `git pull` goes quiet again. Pin it to `main`.
 
 ## The vhost
 
-`site/nginx.conf` is the deployed config. To change it, edit it here, then on
-the droplet:
+`site/nginx.conf` is the tracked source of truth, but it is **not** the
+installed file. Certbot rewrites the installed vhost when it issues or renews a
+cert, adding the 443 server block and the 80→443 redirect; the tracked file
+only listens on 80.
+
+**So never copy the tracked file over the installed one and reload.** That
+drops the HTTPS listener and takes the site off 443 until certbot runs again.
+
+For a small change, edit the installed vhost in place and mirror it back into
+`site/nginx.conf`:
 
 ```bash
-cp /var/www/lostintheforest88/site/nginx.conf \
-   /etc/nginx/sites-available/lostintheforest88.com
+$EDITOR /etc/nginx/sites-available/lostintheforest88.com
 nginx -t && systemctl reload nginx
 ```
 
-Note that certbot rewrites the installed vhost when it issues or renews a cert
-(it adds the 443 server block and the 80→443 redirect), so the installed file
-is `site/nginx.conf` **plus** certbot's edits — don't expect them to match
-byte for byte, and re-copying loses the TLS block until certbot runs again.
+To install the tracked file wholesale, restore TLS before anything reloads.
+Certbot rewrites the file and reloads nginx itself, so do not reload in
+between:
+
+```bash
+cp /etc/nginx/sites-available/lostintheforest88.com{,.bak}
+cp /var/www/lostintheforest88/site/nginx.conf \
+   /etc/nginx/sites-available/lostintheforest88.com
+certbot --nginx -d lostintheforest88.com -d www.lostintheforest88.com --redirect -n
+nginx -t                                              # certbot already reloaded
+curl -sI https://lostintheforest88.com/ | head -1     # expect: HTTP/2 200
+```
+
+If the last two lines don't come back clean, `cp` the `.bak` file into place and
+reload.
 
 ## First-time provision
 
@@ -103,7 +126,8 @@ byte for byte, and re-copying loses the TLS block until certbot runs again.
 mkdir -p /var/www
 git clone -b main https://github.com/ivjames/forest.git /var/www/lostintheforest88
 
-# 2. Install the vhost.
+# 2. Install the vhost. Add the dotfile deny first -- see Notes; the tracked
+#    file does not carry one, and a fresh server would serve /.git/config.
 cp /var/www/lostintheforest88/site/nginx.conf \
    /etc/nginx/sites-available/lostintheforest88.com
 ln -sf /etc/nginx/sites-available/lostintheforest88.com \
@@ -118,10 +142,20 @@ certbot --nginx -d lostintheforest88.com -d www.lostintheforest88.com --redirect
 
 - **Everything tracked is public.** The web root is the git checkout and the
   catch-all `location /` serves it, so `/README.md`, `/DEPLOY.md`, `/STEAM.md`
-  and `/desktop/package.json` are all fetchable (verified). Dotfiles 404, so
-  `.claude/` and `.git/` are not exposed, but `*.md` is **not** denied here —
-  unlike the lab980 convention, which assumes it is. Don't commit anything you
-  wouldn't publish; if that matters, add the deny rules to `site/nginx.conf`.
+  and `/desktop/package.json` are all fetchable (verified). `*.md` is **not**
+  denied here, unlike the lab980 convention, which assumes it is. Don't commit
+  anything you wouldn't publish.
+- **Dotfile protection is not in the tracked vhost.** `/.git/config`,
+  `/play/.git/config` and `/.claude/rules/lab980-conventions.md` all 404 on the
+  live host (verified), but `site/nginx.conf` contains no deny rule — that 404
+  comes from configuration outside this repo, and the responses carry security
+  headers the 200s don't, so something at server level is handling it. **A
+  server provisioned from the section above would serve them.** Add this to the
+  vhost before installing it anywhere:
+
+  ```nginx
+  location ~ /\. { deny all; }
+  ```
 - **No app port / pm2:** nothing listens on an `806x` port for this site.
 - **`forest.lab980.com`** is what this runbook used to describe. It no longer
   resolves; `site/nginx.conf` was added in `917fe2c` (2026-08-19) and moved the
