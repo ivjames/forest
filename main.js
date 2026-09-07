@@ -353,7 +353,13 @@ function renderAll() { renderMap(); renderStats(); renderPack(); }
    a caller that gets too far ahead of the speaker cuts the queue off instead.
    ------------------------------------------------------------------------- */
 const PIT_HZ = 1193182;             // 8253 input clock
-const VOICE_LOOKAHEAD = 0.6;        // s of queued sound before a new cue cuts in
+// How far behind the caller the speaker may run before a new cue stops queuing
+// and cuts the queue instead. This has to stay comfortably above the longest
+// single cue plus whatever one turn stacks after it -- a turn that roars and
+// then reports damage schedules ~0.93 s in one go -- or a cue cancels itself:
+// the message beeps that follow sfx('bear') would wipe out the roar announcing
+// the encounter. Human input cannot reach this backlog (a keyclick is 6 ms).
+const VOICE_LOOKAHEAD = 1.5;
 
 // Snap to a pitch the timer divisor can actually produce.
 function pitch(f) {
