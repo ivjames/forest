@@ -323,83 +323,190 @@ function renderPack() {
 function renderAll() { renderMap(); renderStats(); renderPack(); }
 
 /* ---------------------------------------------------------------------------
-   Sound: IBM PC speaker emulation (1-bit square-wave beeper)
+   Sound: IBM PC speaker emulation (1-bit beeper through a tiny transducer)
 
-   The PC speaker was a single square-wave driven by the 8253 timer: no volume,
-   no timbre, just a pitch switched on and off. We reproduce that voice with
-   square oscillators, quick on/off gating, pitch glides for sweeps, and rapid
-   random-pitch bursts for "noise" (how DOS games faked explosions/growls).
+   The real thing is two parts, and the timbre comes almost entirely from the
+   second one:
+
+   1. The source. Channel 2 of the 8253 PIT divides a 1.193182 MHz clock by an
+      integer, so the speaker can only produce frequencies of 1193182/n -- it
+      cannot hit an arbitrary pitch, and the error grows with pitch (above
+      ~4 kHz the available notes are hundreds of Hz apart). The output is one
+      hard 1-bit square: no volume, no timbre, no second voice. Sweeps were
+      done by rewriting the divisor in a loop, so they climb in audible steps
+      rather than gliding; "noise" was the same trick with random divisors.
+
+   2. The transducer. A bare square wave sounds nothing like a PC because the
+      element in the case is a ~1 inch piezo/mylar disc: it has almost no
+      output below ~400 Hz, a loud resonant peak around 3 kHz, and it gives up
+      above ~7 kHz. Low notes reach you as their harmonics with the
+      fundamental missing, which is why a PC-speaker footstep is a buzz rather
+      than a thud, and why everything sounds thin, nasal and piercing.
+
+   So: one always-on square oscillator -> hard clipper (the bandlimited
+   oscillator's Gibbs ringing flattened back into real square edges) -> a gate
+   switched instantly on and off (no fades; the hardware cannot fade) -> the
+   speaker response, as a highpass pair, a resonance, a body peak and a
+   lowpass -> a compressor standing in for a small element being over-driven.
+
+   One voice, hardware-style: overlapping effects queue behind each other, and
+   a caller that gets too far ahead of the speaker cuts the queue off instead.
    ------------------------------------------------------------------------- */
-let AC = null, MASTER = null;
+const PIT_HZ = 1193182;             // 8253 input clock
+const VOICE_LOOKAHEAD = 0.6;        // s of queued sound before a new cue cuts in
+
+// Snap to a pitch the timer divisor can actually produce.
+function pitch(f) {
+  const div = Math.min(65535, Math.max(1, Math.round(PIT_HZ / f)));
+  return PIT_HZ / div;
+}
+
+let AC = null, MASTER = null, OSC = null, GATE = null, VOICE_END = 0;
+
 function audio() {
   if (!AC) {
     AC = new (window.AudioContext || window.webkitAudioContext)();
+
+    // --- the 1-bit source -------------------------------------------------
+    OSC = AC.createOscillator();
+    OSC.type = 'square';
+    OSC.frequency.value = 1000;
+
+    const drive = AC.createGain();
+    drive.gain.value = 12;                       // slam the clipper
+
+    const clip = AC.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < curve.length; i++) {
+      const x = (i / (curve.length - 1)) * 2 - 1;
+      curve[i] = Math.max(-1, Math.min(1, x * 12));
+    }
+    clip.curve = curve;
+    clip.oversample = '4x';
+
+    GATE = AC.createGain();
+    GATE.gain.value = 0;                         // speaker off until a cue
+
+    // --- the transducer ---------------------------------------------------
+    const hp1 = AC.createBiquadFilter();
+    hp1.type = 'highpass'; hp1.frequency.value = 380; hp1.Q.value = 0.7;
+    const hp2 = AC.createBiquadFilter();
+    hp2.type = 'highpass'; hp2.frequency.value = 380; hp2.Q.value = 0.7;
+
+    const res = AC.createBiquadFilter();         // the piezo's own resonance
+    res.type = 'peaking'; res.frequency.value = 3300; res.Q.value = 3.2; res.gain.value = 13;
+    const body = AC.createBiquadFilter();        // case/cavity colour
+    body.type = 'peaking'; body.frequency.value = 1050; body.Q.value = 1.4; body.gain.value = 5;
+
+    const lp = AC.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 7200; lp.Q.value = 0.8;
+
+    const comp = AC.createDynamicsCompressor();  // a small element, over-driven
+    comp.threshold.value = -14; comp.knee.value = 6; comp.ratio.value = 10;
+    comp.attack.value = 0.002; comp.release.value = 0.08;
+
     MASTER = AC.createGain();
-    MASTER.gain.value = 0.5;
+    MASTER.gain.value = 0.28;
+
+    OSC.connect(drive); drive.connect(clip); clip.connect(GATE);
+    GATE.connect(hp1); hp1.connect(hp2); hp2.connect(res); res.connect(body);
+    body.connect(lp); lp.connect(comp); comp.connect(MASTER);
     MASTER.connect(AC.destination);
+    OSC.start();
   }
   if (AC.state === 'suspended') AC.resume();   // unlocked by the first keypress
   return AC;
 }
-// one square-wave note at an absolute start time
-function tone(freq, start, dur, vol) {
-  const o = AC.createOscillator(), g = AC.createGain();
-  o.type = 'square';
-  o.frequency.setValueAtTime(freq, start);
-  g.gain.setValueAtTime(0.0001, start);
-  g.gain.exponentialRampToValueAtTime(vol, start + 0.004);
-  g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-  o.connect(g); g.connect(MASTER);
-  o.start(start); o.stop(start + dur + 0.02);
+
+// Where the next cue starts on the single voice: right after whatever is
+// already queued, unless the queue has run away, in which case cut it short.
+function voiceStart() {
+  audio();
+  const now = AC.currentTime + 0.002;
+  if (VOICE_END > now && VOICE_END - now <= VOICE_LOOKAHEAD) return VOICE_END;
+  OSC.frequency.cancelScheduledValues(now);
+  GATE.gain.cancelScheduledValues(now);
+  GATE.gain.setValueAtTime(0, now);
+  return now;
 }
+const voiceEnd = (t) => { VOICE_END = t; return t; };
+
+// Speaker on at `vol`, one pitch, then off. No ramps: the gate is a switch.
+function tone(freq, start, dur, vol) {
+  OSC.frequency.setValueAtTime(pitch(freq), start);
+  GATE.gain.setValueAtTime(vol, start);
+  GATE.gain.setValueAtTime(0, start + dur);
+}
+
 // a sequence of [freq, dur] notes played back-to-back (PC-speaker "music")
-function seq(notes, gap = 0, vol = 0.09) {
-  audio(); let t = AC.currentTime + 0.001;
+function seq(notes, gap = 0, vol = 0.09, start) {
+  let t = start === undefined ? voiceStart() : start;
   for (const n of notes) {
     const [f, d] = Array.isArray(n) ? n : [n, 0.08];
     if (f > 0) tone(f, t, d, vol);
     t += d + gap;
   }
-}
-// a pitch glide in a single oscillator (sweeps: flare, damage, bear)
-function glide(f0, f1, dur, vol = 0.08) {
-  audio();
-  const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + 0.001;
-  o.type = 'square';
-  o.frequency.setValueAtTime(f0, t);
-  o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(MASTER);
-  o.start(t); o.stop(t + dur + 0.02);
-}
-// rapid random-pitch burst: the classic PC-speaker "noise" trick
-function burst(count, lo, hi, step, vol = 0.05) {
-  audio(); let t = AC.currentTime + 0.001;
-  for (let i = 0; i < count; i++) { tone(lo + Math.random() * (hi - lo), t, step, vol); t += step; }
+  return voiceEnd(t);
 }
 
-// named effects, mapped to game events
+// A sweep, the way the hardware made one: the divisor is rewritten every few
+// milliseconds, so the pitch climbs in steps and the level never moves.
+function glide(f0, f1, dur, vol = 0.08, start) {
+  const t = start === undefined ? voiceStart() : start;
+  const steps = Math.max(6, Math.round(dur / 0.010));
+  GATE.gain.setValueAtTime(vol, t);
+  for (let i = 0; i <= steps; i++) {
+    OSC.frequency.setValueAtTime(pitch(f0 * Math.pow(f1 / f0, i / steps)), t + dur * (i / steps));
+  }
+  GATE.gain.setValueAtTime(0, t + dur);
+  return voiceEnd(t + dur);
+}
+
+// "Noise": speaker held on while the divisor is scribbled over at random.
+function burst(count, lo, hi, step, vol = 0.05, start) {
+  let t = start === undefined ? voiceStart() : start;
+  GATE.gain.setValueAtTime(vol, t);
+  for (let i = 0; i < count; i++) {
+    OSC.frequency.setValueAtTime(pitch(lo + Math.random() * (hi - lo)), t);
+    t += step;
+  }
+  GATE.gain.setValueAtTime(0, t);
+  return voiceEnd(t);
+}
+
+// The same trick gated per grain, with gaps: spits and ticks rather than a growl.
+function crackle(count, lo, hi, step, vol = 0.05, start) {
+  let t = start === undefined ? voiceStart() : start;
+  for (let i = 0; i < count; i++) {
+    if (Math.random() < 0.7) tone(lo + Math.random() * (hi - lo), t, step * 0.6, vol);
+    t += step;
+  }
+  return voiceEnd(t);
+}
+
+// Named effects, mapped to game events. Levels are re-balanced for the speaker
+// response above: the highpass eats the low notes, so those are pushed up, and
+// anything sitting near the 3 kHz resonance is pulled down.
 const SFX = {
   boot:   () => seq([[784, 0.13]], 0, 0.10),                       // the one BIOS beep
-  type:   () => seq([[1568, 0.006]], 0, 0.028),                    // boot typewriter tick
-  menu:   () => seq([[880, 0.04], [1175, 0.05]], 0, 0.08),
-  key:    () => seq([[1200, 0.006]], 0, 0.02),                     // command entered
-  move:   () => seq([[300, 0.022]], 0, 0.035),                     // footstep
-  bump:   () => seq([[140, 0.09]], 0, 0.07),                       // blocked / edge
-  take:   () => seq([[659, 0.04], [988, 0.05]], 0, 0.08),          // pick up
-  eat:    () => seq([[440, 0.05], [392, 0.05]], 0, 0.06),          // eat / drink
-  warn:   () => seq([[370, 0.055]], 0, 0.05),
-  hurt:   () => glide(200, 90, 0.16, 0.09),                        // took damage
-  bear:   () => { glide(210, 70, 0.34, 0.10); burst(7, 60, 170, 0.03, 0.05); },
-  fire:   () => burst(11, 500, 1500, 0.02, 0.04),                  // crackle
+  type:   () => seq([[1568, 0.006]], 0, 0.05),                    // boot typewriter tick
+  menu:   () => seq([[880, 0.04], [1175, 0.05]], 0, 0.07),
+  key:    () => seq([[1200, 0.006]], 0, 0.035),                    // command entered
+  move:   () => seq([[300, 0.022]], 0, 0.09),                      // footstep
+  bump:   () => seq([[140, 0.09]], 0, 0.13),                       // blocked / edge
+  take:   () => seq([[659, 0.04], [988, 0.05]], 0, 0.07),          // pick up
+  eat:    () => seq([[440, 0.05], [392, 0.05]], 0, 0.07),          // eat / drink
+  warn:   () => seq([[370, 0.055]], 0, 0.07),
+  hurt:   () => glide(200, 90, 0.16, 0.16),                        // took damage
+  bear:   () => burst(9, 60, 170, 0.03, 0.11, glide(210, 70, 0.34, 0.18)),
+  fire:   () => crackle(14, 500, 1500, 0.022, 0.05),               // crackle
   whistle:() => seq([[1760, 0.06], [2093, 0.11]], 0, 0.07),
-  flare:  () => glide(320, 1900, 0.42, 0.07),
-  night:  () => seq([[311, 0.12], [233, 0.17]], 0.02, 0.06),       // dusk, descending
-  dawn:   () => seq([[440, 0.10], [659, 0.15]], 0.02, 0.06),       // sunrise, rising
-  win:    () => seq([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.24]], 0.008, 0.09), // C-E-G-C
-  lose:   () => seq([[392, 0.16], [330, 0.16], [262, 0.16], [175, 0.36]], 0.008, 0.09),  // descending
-  toggle: () => seq([[660, 0.06], [990, 0.07]], 0, 0.08),
+  flare:  () => glide(320, 1900, 0.42, 0.05),
+  night:  () => seq([[311, 0.12], [233, 0.17]], 0.02, 0.09),       // dusk, descending
+  dawn:   () => seq([[440, 0.10], [659, 0.15]], 0.02, 0.07),       // sunrise, rising
+  win:    () => seq([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.24]], 0.008, 0.08), // C-E-G-C
+  lose:   () => seq([[392, 0.16], [330, 0.16], [262, 0.16], [175, 0.36]], 0.008, 0.11),  // descending
+  toggle: () => seq([[660, 0.06], [990, 0.07]], 0, 0.07),
 };
 function sfx(name) { if (!soundOn) return; try { const f = SFX[name]; if (f) f(); } catch (_) { /* ignore */ } }
 

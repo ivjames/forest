@@ -17,11 +17,14 @@ Open `index.html` in any browser — no build, no server, no dependencies. Pick 
 difficulty on the title screen and go. (On touch, use the button row under the
 screen.)
 
-**Sound is on by default** — an emulated IBM PC speaker (1-bit square-wave
-beeper): footsteps, item pips, a growl when the bear closes, fire crackle, a
-whistle, dusk/dawn cues, and win/lose jingles. It unlocks on your first
-keypress (browser autoplay rules) and remembers your choice; type **`sound`**
-to toggle it.
+**Sound is on by default** — an emulated IBM PC speaker: footsteps, item pips,
+a growl when the bear closes, fire crackle, a whistle, dusk/dawn cues, and
+win/lose jingles. It models both halves of the real thing — one 1-bit square
+gated hard on and off, pitched only to the frequencies an 8253 timer divisor
+can produce, played through the response of the little beeper in the case, so
+low notes arrive as buzz with the fundamental missing and everything rings
+around 3 kHz. It unlocks on your first keypress (browser autoplay rules) and
+remembers your choice; type **`sound`** to toggle it.
 
 **Screen.** The display is a period-correct **4:3 EGA** monitor that scales to
 fit any viewport. On a phone held in landscape (where the box can't fit) a
